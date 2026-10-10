@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"ecobrio/internal/booking"
 	"ecobrio/internal/config"
 	"ecobrio/internal/database"
 	"ecobrio/internal/hubs"
@@ -113,17 +114,26 @@ func main() {
 	// Initialize Domain Repositories & Services
 	var hubsRepo hubs.Repository
 	var incidentsRepo incidents.Repository
+	var bookingRepo booking.Repository
+	var tokenStore booking.TokenStore
 
-	if pgClient != nil {
-		slog.Info("Using PostgreSQL storage for hubs and incidents")
+	if pgClient != nil && redisClient != nil {
+		slog.Info("Using PostgreSQL & Redis storage for hubs, incidents, and bookings")
 		hubsRepo = hubs.NewPostgresRepository(pgClient.Pool)
 		incidentsRepo = incidents.NewPostgresRepository(pgClient.Pool)
+		bookingRepo = booking.NewPostgresRepository(pgClient.Pool)
+		tokenStore = booking.NewRedisTokenStore(redisClient.Client)
 	} else {
-		slog.Info("Operating with in-memory persistence fallback for hubs & incidents")
+		slog.Info("Operating with in-memory persistence fallback for hubs, incidents & bookings")
 		memHubs := hubs.NewMemoryRepository()
 		seedMemoryHubs(memHubs)
 		hubsRepo = memHubs
 		incidentsRepo = incidents.NewMemoryRepository()
+
+		memBooking := booking.NewMemoryRepository()
+		seedMemoryBookingSlots(memBooking)
+		bookingRepo = memBooking
+		tokenStore = booking.NewMemoryTokenStore()
 	}
 
 	hubsService := hubs.NewService(hubsRepo)
@@ -133,6 +143,18 @@ func main() {
 	incidentsService := incidents.NewService(incidentsRepo)
 	incidentsHandler := incidents.NewHandler(incidentsService)
 	incidentsHandler.RegisterRoutes(mux)
+
+	bookingService := booking.NewService(bookingRepo, tokenStore)
+	bookingHandler := booking.NewHandler(bookingService)
+	bookingHandler.RegisterRoutes(mux)
+
+	reconciler := booking.NewReconciler(bookingRepo, tokenStore)
+	reconciler.StartBackgroundLoop(ctx, 30*time.Second, func() []uuid.UUID {
+		return []uuid.UUID{
+			uuid.MustParse("11111111-0000-0000-0000-000000000001"),
+			uuid.MustParse("11111111-0000-0000-0000-000000000002"),
+		}
+	})
 
 	// Static Web Experience Platform
 	webDir := "./web"
@@ -222,4 +244,11 @@ func seedMemoryHubs(repo *hubs.MemoryRepository) {
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	})
+}
+
+func seedMemoryBookingSlots(repo *booking.MemoryRepository) {
+	slot1 := uuid.MustParse("11111111-0000-0000-0000-000000000001")
+	slot2 := uuid.MustParse("11111111-0000-0000-0000-000000000002")
+	repo.SetSlot(slot1, 10, 0)
+	repo.SetSlot(slot2, 20, 5)
 }
