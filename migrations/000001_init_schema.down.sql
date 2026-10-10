@@ -1,0 +1,17 @@
+-- ECOBrio Rollback Migration
+
+DROP TABLE IF EXISTS wal_checkpoints CASCADE;
+DROP TABLE IF EXISTS sensor_events CASCADE;
+DROP TABLE IF EXISTS processed_events CASCADE;
+DROP TABLE IF EXISTS outbox_events CASCADE;
+DROP TABLE IF EXISTS incidents CASCADE;
+DROP TABLE IF EXISTS idempotency_records CASCADE;
+DROP TABLE IF EXISTS ledger_postings CASCADE;
+DROP TABLE IF EXISTS journal_entries CASCADE;
+DROP TABLE IF EXISTS ledger_accounts CASCADE;
+DROP TABLE IF EXISTS recycling_submissions CASCADE;
+DROP TABLE IF EXISTS bookings CASCADE;
+DROP TABLE IF EXISTS collection_slots CASCADE;
+DROP TABLE IF EXISTS collection_hubs CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TYPE IF EXISTS waste_stream_type CASCADE;

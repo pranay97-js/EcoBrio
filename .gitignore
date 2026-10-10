@@ -1,0 +1,27 @@
+# Binaries for programs and plugins
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with 'go test -c'
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Data directories and WAL files
+data/
+*.log
+
+# Sensitive environment files
+.env
+
+# Go build cache
+.cache/
+
+# System files
+.DS_Store
+Thumbs.db

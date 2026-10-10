@@ -1,0 +1,63 @@
+name: ECOBrio CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    name: Build & Concurrency Race Gate
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ecobrio
+          POSTGRES_PASSWORD: ecobriosecret
+          POSTGRES_DB: ecobrio_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+          cache: true
+
+      - name: Go Format Check
+        run: test -z "$(gofmt -l .)"
+
+      - name: Go Vet Analysis
+        run: go vet ./...
+
+      - name: Build Server Binary
+        run: go build -v -o bin/server ./cmd/server
+
+      - name: Run Unit Tests
+        run: go test -v ./...
+
+      - name: Run Concurrency Race Detector Gate
+        run: go test -race -v ./...
