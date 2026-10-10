@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,11 +14,15 @@ import (
 
 	"ecobrio/internal/booking"
 	"ecobrio/internal/config"
+	"ecobrio/internal/credits"
 	"ecobrio/internal/database"
 	"ecobrio/internal/hubs"
 	"ecobrio/internal/incidents"
+	"ecobrio/internal/ledger"
 	"ecobrio/internal/middleware"
 	"ecobrio/internal/observability"
+	"ecobrio/internal/outbox"
+	"ecobrio/internal/queue"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -116,15 +121,25 @@ func main() {
 	var incidentsRepo incidents.Repository
 	var bookingRepo booking.Repository
 	var tokenStore booking.TokenStore
+	var ledgerRepo ledger.Repository
+	var outboxRepo outbox.Repository
+	var queueProducer queue.Producer
+	var creditsRepo credits.Repository
+
+	var memLedger *ledger.MemoryRepository
 
 	if pgClient != nil && redisClient != nil {
-		slog.Info("Using PostgreSQL & Redis storage for hubs, incidents, and bookings")
+		slog.Info("Using PostgreSQL & Redis storage for hubs, incidents, bookings, and ledger")
 		hubsRepo = hubs.NewPostgresRepository(pgClient.Pool)
 		incidentsRepo = incidents.NewPostgresRepository(pgClient.Pool)
 		bookingRepo = booking.NewPostgresRepository(pgClient.Pool)
 		tokenStore = booking.NewRedisTokenStore(redisClient.Client)
+		ledgerRepo = ledger.NewPostgresRepository(pgClient.Pool)
+		outboxRepo = outbox.NewPostgresRepository(pgClient.Pool)
+		queueProducer = queue.NewMemoryQueue()
+		creditsRepo = credits.NewPostgresRepository(pgClient.Pool)
 	} else {
-		slog.Info("Operating with in-memory persistence fallback for hubs, incidents & bookings")
+		slog.Info("Operating with in-memory persistence fallback")
 		memHubs := hubs.NewMemoryRepository()
 		seedMemoryHubs(memHubs)
 		hubsRepo = memHubs
@@ -134,6 +149,12 @@ func main() {
 		seedMemoryBookingSlots(memBooking)
 		bookingRepo = memBooking
 		tokenStore = booking.NewMemoryTokenStore()
+
+		memLedger = ledger.NewMemoryRepository()
+		ledgerRepo = memLedger
+		outboxRepo = outbox.NewMemoryRepository()
+		queueProducer = queue.NewMemoryQueue()
+		creditsRepo = credits.NewMemoryRepository()
 	}
 
 	hubsService := hubs.NewService(hubsRepo)
@@ -147,6 +168,19 @@ func main() {
 	bookingService := booking.NewService(bookingRepo, tokenStore)
 	bookingHandler := booking.NewHandler(bookingService)
 	bookingHandler.RegisterRoutes(mux)
+
+	ledgerService := ledger.NewService(ledgerRepo)
+	creditsService := credits.NewService(creditsRepo, ledgerService, outboxRepo)
+	creditsHandler := credits.NewHandler(creditsService)
+	creditsHandler.RegisterRoutes(mux)
+
+	if memLedger != nil {
+		seedMemoryLedger(memLedger, ledgerService)
+	}
+
+	// Transactional Outbox Relay
+	outboxRelay := outbox.NewRelay(outboxRepo, queueProducer)
+	outboxRelay.StartBackgroundRelay(ctx, 2*time.Second, 50)
 
 	reconciler := booking.NewReconciler(bookingRepo, tokenStore)
 	reconciler.StartBackgroundLoop(ctx, 30*time.Second, func() []uuid.UUID {
@@ -251,4 +285,21 @@ func seedMemoryBookingSlots(repo *booking.MemoryRepository) {
 	slot2 := uuid.MustParse("11111111-0000-0000-0000-000000000002")
 	repo.SetSlot(slot1, 10, 0)
 	repo.SetSlot(slot2, 20, 5)
+}
+
+func seedMemoryLedger(repo *ledger.MemoryRepository, svc *ledger.Service) {
+	ctx := context.Background()
+	_, _ = repo.GetOrCreateAccount(ctx, "SYSTEM_ISSUANCE_RESERVE", ledger.AccountEquity, nil)
+	citizenID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	code := fmt.Sprintf("CITIZEN_WALLET:%s", citizenID.String())
+	_, _ = repo.GetOrCreateAccount(ctx, code, ledger.AccountLiability, &citizenID)
+	// Seed demo balance of 500 points for Elena Vance
+	_, _ = svc.PostBalancedTransaction(ctx, ledger.PostTransactionRequest{
+		IdempotencyKey: "seed-demo-citizen-grant",
+		Description:    "Welcome Grant for Elena Vance",
+		Postings: []ledger.PostingDraft{
+			{AccountCode: "SYSTEM_ISSUANCE_RESERVE", Points: 500, IsCredit: false},
+			{AccountCode: code, Points: 500, IsCredit: true},
+		},
+	})
 }
