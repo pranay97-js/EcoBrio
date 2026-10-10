@@ -23,6 +23,8 @@ import (
 	"ecobrio/internal/observability"
 	"ecobrio/internal/outbox"
 	"ecobrio/internal/queue"
+	"ecobrio/internal/telemetry"
+	"ecobrio/internal/telemetry/wal"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -125,6 +127,8 @@ func main() {
 	var outboxRepo outbox.Repository
 	var queueProducer queue.Producer
 	var creditsRepo credits.Repository
+	var telemetryRepo telemetry.Repository
+	var checkpointStore wal.CheckpointStore
 
 	var memLedger *ledger.MemoryRepository
 
@@ -138,6 +142,8 @@ func main() {
 		outboxRepo = outbox.NewPostgresRepository(pgClient.Pool)
 		queueProducer = queue.NewMemoryQueue()
 		creditsRepo = credits.NewPostgresRepository(pgClient.Pool)
+		telemetryRepo = telemetry.NewPostgresRepository(pgClient.Pool)
+		checkpointStore = wal.NewPostgresCheckpointStore(pgClient.Pool)
 	} else {
 		slog.Info("Operating with in-memory persistence fallback")
 		memHubs := hubs.NewMemoryRepository()
@@ -155,6 +161,8 @@ func main() {
 		outboxRepo = outbox.NewMemoryRepository()
 		queueProducer = queue.NewMemoryQueue()
 		creditsRepo = credits.NewMemoryRepository()
+		telemetryRepo = telemetry.NewMemoryRepository()
+		checkpointStore = wal.NewMemoryCheckpointStore()
 	}
 
 	hubsService := hubs.NewService(hubsRepo)
@@ -181,6 +189,26 @@ func main() {
 	// Transactional Outbox Relay
 	outboxRelay := outbox.NewRelay(outboxRepo, queueProducer)
 	outboxRelay.StartBackgroundRelay(ctx, 2*time.Second, 50)
+
+	// Segmented Write-Ahead Log (WAL) & Telemetry Ingestion Engine
+	walDir := "./data/wal"
+	walEngine, err := wal.NewSegmentedEngine(wal.DefaultConfig(walDir))
+	if err != nil {
+		slog.Error("Failed to initialize segmented WAL engine", "error", err)
+	} else {
+		defer func() { _ = walEngine.Close() }()
+		telemetryService := telemetry.NewService(telemetryRepo, walEngine, checkpointStore)
+		telemetryHandler := telemetry.NewHandler(telemetryService)
+		telemetryHandler.RegisterRoutes(mux)
+
+		// On-boot Crash Recovery Replay Daemon
+		replayed, err := telemetryService.RunCrashRecovery(ctx)
+		if err != nil {
+			slog.Warn("WAL crash recovery notice on boot", "error", err)
+		} else if replayed > 0 {
+			slog.Info("WAL crash recovery daemon replayed uncommitted records", "count", replayed)
+		}
+	}
 
 	reconciler := booking.NewReconciler(bookingRepo, tokenStore)
 	reconciler.StartBackgroundLoop(ctx, 30*time.Second, func() []uuid.UUID {
