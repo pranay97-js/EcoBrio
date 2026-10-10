@@ -1,6 +1,8 @@
 package observability
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -16,10 +18,24 @@ type Metrics struct {
 	WebSocketConnections  prometheus.Gauge
 }
 
-// NewMetrics initializes and registers all Prometheus golden signals
+var (
+	defaultMetrics *Metrics
+	once           sync.Once
+)
+
+// NewMetrics returns the singleton metrics instance using the default registerer
 func NewMetrics() *Metrics {
+	once.Do(func() {
+		defaultMetrics = NewMetricsWithRegistry(prometheus.DefaultRegisterer)
+	})
+	return defaultMetrics
+}
+
+// NewMetricsWithRegistry initializes metrics on a specified Prometheus registry
+func NewMetricsWithRegistry(reg prometheus.Registerer) *Metrics {
+	factory := promauto.With(reg)
 	return &Metrics{
-		RequestDuration: promauto.NewHistogramVec(
+		RequestDuration: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "ecobrio_request_duration_seconds",
 				Help:    "HTTP request latency distributions across routes and status codes",
@@ -27,40 +43,40 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "route", "status"},
 		),
-		RequestsTotal: promauto.NewCounterVec(
+		RequestsTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "ecobrio_requests_total",
 				Help: "Total HTTP requests processed by status code class and route",
 			},
 			[]string{"method", "route", "status"},
 		),
-		BookingConflictsTotal: promauto.NewCounterVec(
+		BookingConflictsTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "ecobrio_booking_conflicts_total",
 				Help: "Total booking contention conflicts intercepted before or during DB transactions",
 			},
 			[]string{"reason"},
 		),
-		IdempotencyHitsTotal: promauto.NewCounterVec(
+		IdempotencyHitsTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "ecobrio_idempotency_hits_total",
 				Help: "Total duplicate requests intercepted and served from idempotency store",
 			},
 			[]string{"scope"},
 		),
-		WALRecordsAppended: promauto.NewCounter(
+		WALRecordsAppended: factory.NewCounter(
 			prometheus.CounterOpts{
 				Name: "ecobrio_wal_records_appended_total",
 				Help: "Total telemetry events written to the in-memory write buffer",
 			},
 		),
-		WALRecordsDurable: promauto.NewCounter(
+		WALRecordsDurable: factory.NewCounter(
 			prometheus.CounterOpts{
 				Name: "ecobrio_wal_records_durable_total",
 				Help: "Total telemetry events fsynced and acknowledged as durable",
 			},
 		),
-		WebSocketConnections: promauto.NewGauge(
+		WebSocketConnections: factory.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "ecobrio_websocket_connections",
 				Help: "Number of active persistent WebSocket client connections",

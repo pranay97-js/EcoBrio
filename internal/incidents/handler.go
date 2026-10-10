@@ -1,0 +1,125 @@
+package incidents
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+
+	"ecobrio/internal/api"
+	"github.com/google/uuid"
+)
+
+type Handler struct {
+	service *Service
+}
+
+func NewHandler(service *Service) *Handler {
+	return &Handler{service: service}
+}
+
+// RegisterRoutes attaches incident endpoints to the ServeMux
+func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v1/incidents", h.handleCreateIncident)
+	mux.HandleFunc("GET /api/v1/incidents", h.handleListIncidents)
+	mux.HandleFunc("GET /api/v1/incidents/{id}", h.handleGetIncident)
+	mux.HandleFunc("PATCH /api/v1/incidents/{id}/status", h.handleUpdateStatus)
+}
+
+func (h *Handler) handleCreateIncident(w http.ResponseWriter, r *http.Request) {
+	var req CreateIncidentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Failed to parse JSON body")
+		return
+	}
+
+	inc, err := h.service.ReportIncident(r.Context(), req)
+	if err != nil {
+		if errors.Is(err, api.ErrInvalidInput) {
+			api.WriteError(w, http.StatusBadRequest, "INVALID_INPUT", err.Error())
+			return
+		}
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to create incident")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusCreated, inc)
+}
+
+func (h *Handler) handleListIncidents(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	limit, _ := strconv.Atoi(q.Get("limit"))
+
+	filter := Filter{
+		Status:     q.Get("status"),
+		StreamType: q.Get("stream_type"),
+		Limit:      limit,
+	}
+
+	incidentsList, err := h.service.ListIncidents(r.Context(), filter)
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to retrieve incidents")
+		return
+	}
+
+	if incidentsList == nil {
+		incidentsList = []Incident{}
+	}
+	api.WriteJSON(w, http.StatusOK, incidentsList)
+}
+
+func (h *Handler) handleGetIncident(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, "INVALID_UUID", "Provided incident ID is not a valid UUID")
+		return
+	}
+
+	inc, err := h.service.GetIncident(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, api.ErrNotFound) {
+			api.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Incident not found")
+			return
+		}
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to retrieve incident")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusOK, inc)
+}
+
+func (h *Handler) handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, "INVALID_UUID", "Provided incident ID is not a valid UUID")
+		return
+	}
+
+	var req UpdateStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Failed to parse JSON body")
+		return
+	}
+
+	updated, err := h.service.UpdateStatus(r.Context(), id, req.Status, req.AssigneeID)
+	if err != nil {
+		if errors.Is(err, api.ErrNotFound) {
+			api.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Incident not found")
+			return
+		}
+		if errors.Is(err, api.ErrInvalidTransition) {
+			api.WriteError(w, http.StatusConflict, "ILLEGAL_TRANSITION", err.Error())
+			return
+		}
+		if errors.Is(err, api.ErrInvalidInput) {
+			api.WriteError(w, http.StatusBadRequest, "INVALID_INPUT", err.Error())
+			return
+		}
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update incident status")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusOK, updated)
+}

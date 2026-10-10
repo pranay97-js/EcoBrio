@@ -20,10 +20,10 @@ ON CONFLICT (id) DO NOTHING;
 -- 3. Create Slots for Central Metro Terminal Alpha
 INSERT INTO collection_slots (id, hub_id, stream_type, start_time, end_time, total_capacity, booked_count, version)
 VALUES
-    ('s1111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'EWASTE', NOW(), NOW() + INTERVAL '2 hour', 10, 0, 1),
-    ('s2222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'PLASTICS', NOW(), NOW() + INTERVAL '2 hour', 20, 5, 1),
-    ('s3333333-3333-3333-3333-333333333333', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'METALS', NOW(), NOW() + INTERVAL '2 hour', 15, 2, 1),
-    ('s4444444-4444-4444-4444-444444444444', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ORGANIC', NOW(), NOW() + INTERVAL '2 hour', 25, 8, 1)
+    ('11111111-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'EWASTE', NOW(), NOW() + INTERVAL '2 hour', 10, 0, 1),
+    ('11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'PLASTICS', NOW(), NOW() + INTERVAL '2 hour', 20, 5, 1),
+    ('11111111-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'METALS', NOW(), NOW() + INTERVAL '2 hour', 15, 2, 1),
+    ('11111111-0000-0000-0000-000000000004', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ORGANIC', NOW(), NOW() + INTERVAL '2 hour', 25, 8, 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. Create Ledger Accounts

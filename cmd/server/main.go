@@ -13,15 +13,18 @@ import (
 
 	"ecobrio/internal/config"
 	"ecobrio/internal/database"
+	"ecobrio/internal/hubs"
+	"ecobrio/internal/incidents"
 	"ecobrio/internal/middleware"
 	"ecobrio/internal/observability"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type ReadinessResponse struct {
-	Status      string            `json:"status"`
-	Timestamp   time.Time         `json:"timestamp"`
-	Components  map[string]string `json:"components"`
+	Status     string            `json:"status"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Components map[string]string `json:"components"`
 }
 
 func main() {
@@ -107,6 +110,30 @@ func main() {
 	// Prometheus Metrics Endpoint
 	mux.Handle("GET /metrics", promhttp.Handler())
 
+	// Initialize Domain Repositories & Services
+	var hubsRepo hubs.Repository
+	var incidentsRepo incidents.Repository
+
+	if pgClient != nil {
+		slog.Info("Using PostgreSQL storage for hubs and incidents")
+		hubsRepo = hubs.NewPostgresRepository(pgClient.Pool)
+		incidentsRepo = incidents.NewPostgresRepository(pgClient.Pool)
+	} else {
+		slog.Info("Operating with in-memory persistence fallback for hubs & incidents")
+		memHubs := hubs.NewMemoryRepository()
+		seedMemoryHubs(memHubs)
+		hubsRepo = memHubs
+		incidentsRepo = incidents.NewMemoryRepository()
+	}
+
+	hubsService := hubs.NewService(hubsRepo)
+	hubsHandler := hubs.NewHandler(hubsService)
+	hubsHandler.RegisterRoutes(mux)
+
+	incidentsService := incidents.NewService(incidentsRepo)
+	incidentsHandler := incidents.NewHandler(incidentsService)
+	incidentsHandler.RegisterRoutes(mux)
+
 	// Static Web Experience Platform
 	webDir := "./web"
 	if _, err := os.Stat(webDir); err == nil {
@@ -153,4 +180,46 @@ func main() {
 		}
 		slog.Info("ECOBrio server gracefully stopped")
 	}
+}
+
+func seedMemoryHubs(repo *hubs.MemoryRepository) {
+	ctx := context.Background()
+	hubAlphaID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	_ = repo.CreateHub(ctx, &hubs.Hub{
+		ID:             hubAlphaID,
+		Name:           "Central Metro Terminal Alpha",
+		Address:        "Platform 4, Transit Boulevard, SW1A 1AA",
+		Latitude:       51.5074,
+		Longitude:      -0.1278,
+		Status:         "ACTIVE",
+		OperatingHours: "06:00 - 22:00 Daily",
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	})
+
+	_ = repo.CreateSlot(ctx, &hubs.Slot{
+		ID:            uuid.MustParse("11111111-0000-0000-0000-000000000001"),
+		HubID:         hubAlphaID,
+		StreamType:    "EWASTE",
+		StartTime:     time.Now(),
+		EndTime:       time.Now().Add(2 * time.Hour),
+		TotalCapacity: 10,
+		BookedCount:   0,
+		Version:       1,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	})
+
+	_ = repo.CreateSlot(ctx, &hubs.Slot{
+		ID:            uuid.MustParse("11111111-0000-0000-0000-000000000002"),
+		HubID:         hubAlphaID,
+		StreamType:    "PLASTICS",
+		StartTime:     time.Now(),
+		EndTime:       time.Now().Add(2 * time.Hour),
+		TotalCapacity: 20,
+		BookedCount:   5,
+		Version:       1,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	})
 }
