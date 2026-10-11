@@ -225,6 +225,52 @@ func (e *SegmentedEngine) ListSegments() ([]string, error) {
 	return segments, nil
 }
 
+// PruneSegmentsOlderThan removes sealed historical segments whose records are all <= retentionSequence
+// The actively written segment file is never deleted
+func (e *SegmentedEngine) PruneSegmentsOlderThan(retentionSequence uint64) ([]string, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	activeFile := formatSegmentFilename(e.activeSegIndex)
+	entries, err := os.ReadDir(e.cfg.Dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var pruned []string
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "wal_") || !strings.HasSuffix(entry.Name(), ".log") {
+			continue
+		}
+		if entry.Name() == activeFile {
+			continue // Never delete active segment!
+		}
+
+		path := filepath.Join(e.cfg.Dir, entry.Name())
+		records, err := ReadSegment(path)
+		if err != nil {
+			continue
+		}
+
+		// Check if all records in this segment are <= retentionSequence
+		allOld := true
+		for _, r := range records {
+			if r.SequenceID > retentionSequence {
+				allOld = false
+				break
+			}
+		}
+
+		if allOld && len(records) > 0 {
+			if err := os.Remove(path); err == nil {
+				pruned = append(pruned, entry.Name())
+			}
+		}
+	}
+
+	return pruned, nil
+}
+
 // ReadSegment reads and validates all non-corrupted frames from a segment file
 // Torn writes at the end of the log are gracefully truncated
 func ReadSegment(path string) ([]Record, error) {

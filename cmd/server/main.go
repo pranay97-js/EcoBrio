@@ -24,6 +24,7 @@ import (
 	"ecobrio/internal/outbox"
 	"ecobrio/internal/queue"
 	"ecobrio/internal/telemetry"
+	"ecobrio/internal/telemetry/snapshots"
 	"ecobrio/internal/telemetry/wal"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -192,22 +193,35 @@ func main() {
 
 	// Segmented Write-Ahead Log (WAL) & Telemetry Ingestion Engine
 	walDir := "./data/wal"
+	snapDir := "./data/snapshots"
 	walEngine, err := wal.NewSegmentedEngine(wal.DefaultConfig(walDir))
 	if err != nil {
 		slog.Error("Failed to initialize segmented WAL engine", "error", err)
 	} else {
 		defer func() { _ = walEngine.Close() }()
-		telemetryService := telemetry.NewService(telemetryRepo, walEngine, checkpointStore)
+
+		snapMgr, sErr := snapshots.NewManager(snapDir)
+		if sErr != nil {
+			slog.Warn("Snapshot manager initialization notice", "error", sErr)
+		}
+
+		telemetryService := telemetry.NewService(telemetryRepo, walEngine, checkpointStore, snapMgr)
 		telemetryHandler := telemetry.NewHandler(telemetryService)
 		telemetryHandler.RegisterRoutes(mux)
 
-		// On-boot Crash Recovery Replay Daemon
-		replayed, err := telemetryService.RunCrashRecovery(ctx)
+		// On-boot Crash Recovery Replay Daemon with Snapshot support
+		restoredSnap, replayedWAL, err := telemetryService.RunCrashRecoveryWithSnapshot(ctx)
 		if err != nil {
 			slog.Warn("WAL crash recovery notice on boot", "error", err)
-		} else if replayed > 0 {
-			slog.Info("WAL crash recovery daemon replayed uncommitted records", "count", replayed)
+		} else if restoredSnap > 0 || replayedWAL > 0 {
+			slog.Info("WAL crash recovery daemon completed",
+				"restored_from_snapshot", restoredSnap,
+				"replayed_from_wal", replayedWAL,
+			)
 		}
+
+		// Launch background snapshot compaction worker
+		telemetryService.StartBackgroundCompactor(ctx, 30*time.Second)
 	}
 
 	reconciler := booking.NewReconciler(bookingRepo, tokenStore)

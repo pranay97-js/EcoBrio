@@ -16,6 +16,7 @@ type Repository interface {
 	SaveReading(ctx context.Context, reading *SensorReading) error
 	GetLatestReading(ctx context.Context, sensorID string) (*SensorReading, error)
 	ListReadings(ctx context.Context, sensorID string, limit int) ([]SensorReading, error)
+	ListAllLatestSensors(ctx context.Context) ([]SensorReading, error)
 }
 
 type PostgresRepository struct {
@@ -133,6 +134,46 @@ func (r *PostgresRepository) ListReadings(ctx context.Context, sensorID string, 
 	return results, nil
 }
 
+func (r *PostgresRepository) ListAllLatestSensors(ctx context.Context) ([]SensorReading, error) {
+	query := `
+		SELECT DISTINCT ON (sensor_id)
+		       id, sensor_id, sequence_id, stream_type,
+		       fill_level_percent, battery_millivolts, temperature_celsius,
+		       timestamp, applied_at
+		FROM sensor_events
+		ORDER BY sensor_id, timestamp DESC, sequence_id DESC
+	`
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []SensorReading
+	for rows.Next() {
+		var s SensorReading
+		var seq int64
+		var batt *int
+		var temp *float64
+		if err := rows.Scan(
+			&s.ID, &s.SensorID, &seq, &s.StreamType,
+			&s.FillLevelPercent, &batt, &temp,
+			&s.Timestamp, &s.AppliedAt,
+		); err != nil {
+			return nil, err
+		}
+		s.SequenceID = uint64(seq)
+		if batt != nil {
+			s.BatteryMillivolts = *batt
+		}
+		if temp != nil {
+			s.TemperatureCelsius = *temp
+		}
+		results = append(results, s)
+	}
+	return results, nil
+}
+
 type MemoryRepository struct {
 	mu       sync.RWMutex
 	readings map[string][]SensorReading
@@ -204,4 +245,18 @@ func (m *MemoryRepository) ListReadings(ctx context.Context, sensorID string, li
 		res[i], res[j] = res[j], res[i]
 	}
 	return res, nil
+}
+
+func (m *MemoryRepository) ListAllLatestSensors(ctx context.Context) ([]SensorReading, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var results []SensorReading
+	for _, list := range m.readings {
+		if len(list) > 0 {
+			latest := list[len(list)-1]
+			results = append(results, latest)
+		}
+	}
+	return results, nil
 }

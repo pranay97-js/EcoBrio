@@ -14,6 +14,7 @@ import (
 	"ecobrio/internal/middleware"
 	"ecobrio/internal/observability"
 	"ecobrio/internal/telemetry"
+	"ecobrio/internal/telemetry/snapshots"
 	"ecobrio/internal/telemetry/wal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,8 +35,10 @@ func setupTelemetryTestServer(t *testing.T) (*httptest.Server, *telemetry.Servic
 
 	cpStore := wal.NewMemoryCheckpointStore()
 	memRepo := telemetry.NewMemoryRepository()
+	snapMgr, err := snapshots.NewManager(tempDir + "/snapshots")
+	require.NoError(t, err)
 
-	svc := telemetry.NewService(memRepo, walEngine, cpStore)
+	svc := telemetry.NewService(memRepo, walEngine, cpStore, snapMgr)
 	handler := telemetry.NewHandler(svc)
 
 	mux := http.NewServeMux()
@@ -225,4 +228,56 @@ func TestTelemetry_CrashRecoveryReplay_HTTP(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint64(5), latest.SequenceID)
 	assert.Equal(t, 75.0, latest.FillLevelPercent)
+}
+
+func TestTelemetry_SnapshotCompactionHTTP(t *testing.T) {
+	server, _, _, tempDir := setupTelemetryTestServer(t)
+	defer server.Close()
+	defer os.RemoveAll(tempDir)
+
+	client := server.Client()
+
+	// Ingest readings for 2 sensors
+	for s := 1; s <= 2; s++ {
+		ingestReq := telemetry.IngestRequest{
+			SensorID:           fmt.Sprintf("SNAP-BIN-%02d", s),
+			SequenceID:         uint64(s * 10),
+			StreamType:         "METALS",
+			FillLevelPercent:   float64(s * 30),
+			BatteryMillivolts:  3300,
+			TemperatureCelsius: 21.0,
+		}
+		bodyBytes, _ := json.Marshal(ingestReq)
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/api/v1/telemetry/ingest", bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		_ = resp.Body.Close()
+	}
+
+	// 1. POST /api/v1/telemetry/snapshot -> Trigger Compaction
+	snapReq, _ := http.NewRequest(http.MethodPost, server.URL+"/api/v1/telemetry/snapshot", nil)
+	snapResp, err := client.Do(snapReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, snapResp.StatusCode)
+
+	var compactRes telemetry.CompactionResult
+	_ = json.NewDecoder(snapResp.Body).Decode(&compactRes)
+	_ = snapResp.Body.Close()
+	assert.Equal(t, 2, compactRes.SensorCount)
+	assert.Equal(t, uint64(20), compactRes.LastSequenceID)
+
+	// 2. GET /api/v1/telemetry/snapshots/latest -> Fetch Snapshot
+	getReq, _ := http.NewRequest(http.MethodGet, server.URL+"/api/v1/telemetry/snapshots/latest", nil)
+	getResp, err := client.Do(getReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, getResp.StatusCode)
+
+	var snap snapshots.Snapshot
+	_ = json.NewDecoder(getResp.Body).Decode(&snap)
+	_ = getResp.Body.Close()
+	assert.Equal(t, uint64(20), snap.LastSequenceID)
+	assert.Len(t, snap.SensorStates, 2)
+	assert.Equal(t, 60.0, snap.SensorStates["SNAP-BIN-02"].FillLevelPercent)
 }
