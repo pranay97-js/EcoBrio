@@ -59,16 +59,36 @@ func main() {
 	// Initialize Observability
 	metrics := observability.NewMetrics()
 
+	isMigrateOnly := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--migrate-only" {
+			isMigrateOnly = true
+			break
+		}
+	}
+
 	// Initialize PostgreSQL Connection Pool (Optional soft-start if DB is initializing)
 	pgClient, err := database.NewPostgresPool(ctx, &cfg.Database)
 	if err != nil {
+		if isMigrateOnly {
+			slog.Error("Migration failed: unable to connect to PostgreSQL", "error", err)
+			os.Exit(1)
+		}
 		slog.Warn("PostgreSQL pool initialization failed (will retry on readiness)", "error", err)
 	} else {
 		defer pgClient.Close()
 		// Run pending migrations
 		migrator := database.NewMigrator(pgClient.Pool)
 		if err := migrator.RunMigrations(ctx, "./migrations"); err != nil {
+			if isMigrateOnly {
+				slog.Error("Migration execution failed", "error", err)
+				os.Exit(1)
+			}
 			slog.Warn("Automated migrations encountered an issue", "error", err)
+		}
+		if isMigrateOnly {
+			slog.Info("Schema migrations executed successfully. Exiting (--migrate-only requested).")
+			return
 		}
 	}
 

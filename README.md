@@ -146,8 +146,11 @@ make run
 |---|---|
 | `make test` | Run all unit tests across the repository with clean cache (`go test -count=1 ./...`) |
 | `make test-integration` | Execute end-to-end integration test suites |
+| `make test-race` | Execute tests under Go race detector |
 | `make bench` | Execute full PRD benchmark suite (throughput, concurrency race, websocket, WAL) |
+| `make bench-booking` | Execute booking concurrency race test against 5 slots |
 | `make chaos-wal` | Run WAL chaos crash injection test (5,000 writes + sudden process kill + recovery) |
+| `make migrate` | Apply pending PostgreSQL schema migrations |
 | `make build` | Compile backend server and benchmark CLI binaries into `bin/` |
 | `make clean` | Purge compiled binaries, temporary WAL logs, and snapshot artifacts |
 
