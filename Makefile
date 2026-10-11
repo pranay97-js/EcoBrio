@@ -1,17 +1,22 @@
-# ECOBrio Project Management Automation
+# ECOBrio Distributed Reverse-Logistics Platform Automation
+# Reference: EcoBrio_Blueprint.pdf Section 19.1
 
-.PHONY: help up down ps logs test test-race build run migrate lint clean
+.PHONY: help up down ps logs build run test test-race test-integration bench chaos-wal migrate clean
 
 help:
-	@echo "ECOBrio Engineering Commands:"
-	@echo "  make up          - Start local Docker Compose infrastructure (Postgres, Redis, LocalStack, Prometheus, Grafana)"
-	@echo "  make down        - Stop all Docker infrastructure"
-	@echo "  make logs        - Tail infrastructure logs"
-	@echo "  make build       - Compile the Go backend server binary"
-	@echo "  make run         - Run the Go server locally"
-	@echo "  make test        - Run all unit tests"
-	@echo "  make test-race   - Run unit tests with race detection"
-	@echo "  make clean       - Clean temporary build artifacts and test outputs"
+	@echo "ECOBrio Developer & Evaluation Commands:"
+	@echo "  make up               - Start local Docker infrastructure (Postgres, Redis, LocalStack, Prometheus, Grafana)"
+	@echo "  make down             - Stop all Docker infrastructure and volumes"
+	@echo "  make ps               - Display status of Docker infrastructure containers"
+	@echo "  make logs             - Tail infrastructure logs"
+	@echo "  make build            - Compile server and benchmark binaries"
+	@echo "  make run              - Run the ECOBrio server locally"
+	@echo "  make test             - Execute all unit tests across the repository"
+	@echo "  make test-integration - Execute end-to-end integration test suites"
+	@echo "  make test-race        - Execute tests under Go race detector"
+	@echo "  make bench            - Execute full PRD benchmark suite (throughput, concurrency race, websocket, WAL)"
+	@echo "  make chaos-wal        - Execute WAL crash injection and fault recovery test"
+	@echo "  make clean            - Clean compiled binaries, temporary logs, and snapshot artifacts"
 
 up:
 	docker compose -f deploy/docker-compose.yml up -d
@@ -26,16 +31,26 @@ logs:
 	docker compose -f deploy/docker-compose.yml logs -f
 
 build:
-	go build -o bin/server.exe ./cmd/server
+	go build -o bin/server ./cmd/server
+	go build -o bin/benchmarks ./cmd/benchmarks
 
 run:
 	go run ./cmd/server/main.go
 
 test:
-	go test -v ./...
+	go test -count=1 ./...
+
+test-integration:
+	go test -v ./tests/integration/...
 
 test-race:
-	go test -race -v ./...
+	go test -race ./...
+
+bench:
+	go run ./cmd/benchmarks/main.go
+
+chaos-wal:
+	go test -v ./tests/chaos/...
 
 clean:
-	rm -rf bin/ data/wal/*.log
+	rm -rf bin/ data/wal/*.log data/snapshots/*.json

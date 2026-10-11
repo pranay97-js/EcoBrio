@@ -1,0 +1,810 @@
+openapi: 3.0.3
+info:
+  title: ECOBrio Distributed Reverse-Logistics Platform API
+  description: |
+    Production REST and WebSocket specifications for the ECOBrio Distributed Reverse-Logistics Platform.
+    Enforces low-level concurrency control, double-entry ledger settlement, segmented WAL persistence,
+    and real-time geospatial incident streaming.
+  version: 1.0.0
+  contact:
+    name: ECOBrio Core Engineering Team
+    email: engineering@ecobrio.io
+
+servers:
+  - url: http://localhost:8080
+    description: Local Docker / Native Go Development Server
+
+paths:
+  # ============================================================================
+  # 1. SYSTEM HEALTH & OBSERVABILITY
+  # ============================================================================
+  /health:
+    get:
+      summary: Liveness Probe
+      description: Returns HTTP 200 if the process HTTP listener is active.
+      responses:
+        '200':
+          description: Service is healthy and alive.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  /ready:
+    get:
+      summary: Readiness Probe
+      description: Validates operational connectivity to PostgreSQL and Redis.
+      responses:
+        '200':
+          description: All critical dependencies are UP.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  components:
+                    type: object
+                    properties:
+                      postgres:
+                        type: string
+                        example: UP
+                      redis:
+                        type: string
+                        example: UP
+        '503':
+          description: System is degraded; one or more dependencies are DOWN.
+
+  /metrics:
+    get:
+      summary: Prometheus Metrics Exposition
+      description: Standard OpenMetrics exposition format consumed by Prometheus scraper.
+      responses:
+        '200':
+          description: Prometheus formatted metrics payload.
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # ============================================================================
+  # 2. HUBS & COLLECTION TIME SLOTS
+  # ============================================================================
+  /api/v1/hubs:
+    get:
+      summary: List Recovery Hubs
+      description: Retrieve list of recovery hubs with optional spatial radius filtering.
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: lon
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: radius_km
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 10.0
+      responses:
+        '200':
+          description: List of collection hubs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hub'
+    post:
+      summary: Register Recovery Hub
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHubRequest'
+      responses:
+        '201':
+          description: Hub created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hub'
+
+  /api/v1/hubs/{id}/slots:
+    post:
+      summary: Create Collection Slot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSlotRequest'
+      responses:
+        '201':
+          description: Slot created with initial capacity.
+
+  # ============================================================================
+  # 3. CONCURRENCY BOOKING ENGINE
+  # ============================================================================
+  /api/v1/bookings:
+    post:
+      summary: Reserve Collection Slot
+      description: |
+        Executes two-tier atomic reservation:
+        1. Layer 1: Redis Lua token lease (`AcquireToken`).
+        2. Layer 2: Atomic PostgreSQL capacity decrement with version invariant.
+        Requires `X-Idempotency-Key` header for strict idempotency guarantees.
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Unique client idempotency key (UUID or deterministic hash).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Slot successfully reserved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Missing idempotency key or invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Slot capacity exhausted or version conflict. Zero over-allocation guaranteed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{id}:
+    get:
+      summary: Get Booking Details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: Booking not found.
+
+  # ============================================================================
+  # 4. CREDIT CLEARINGHOUSE & DOUBLE-ENTRY LEDGER
+  # ============================================================================
+  /api/v1/submissions:
+    post:
+      summary: QR Material Surrender Scan
+      description: Citizen surrenders recyclables at hub, placing submission into `SCANNED` state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubmissionRequest'
+      responses:
+        '201':
+          description: Submission initialized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecyclingSubmission'
+        '409':
+          description: QR duplicate submission detected.
+
+  /api/v1/submissions/{id}/inspection:
+    post:
+      summary: Inspector FSM Settlement
+      description: |
+        Hub inspector verifies material weight and grade:
+        - `passed=true`: Transitions to `CREDITED` and posts balanced double-entry ledger transaction.
+        - `passed=false`: Transitions to `REJECTED`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectSubmissionRequest'
+      responses:
+        '200':
+          description: Submission inspected and ledger points settled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecyclingSubmission'
+
+  /api/v1/credits/me:
+    get:
+      summary: Citizen Wallet Profile
+      description: Retrieves authorized citizen point balance directly from double-entry ledger postings.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenProfile'
+
+  /api/v1/credits/redeem:
+    post:
+      summary: Voucher Redemption Saga
+      description: |
+        Executes multi-step voucher redemption saga:
+        1. Moves points to Escrow Hold.
+        2. Calls voucher provider.
+        3. If provider fails, executes compensating reversal restoring points.
+        4. If provider succeeds, settles escrow into System Sink.
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemPerkRequest'
+      responses:
+        '200':
+          description: Voucher successfully issued.
+        '422':
+          description: Insufficient credit balance.
+        '502':
+          description: Voucher provider failed; points restored via compensating saga transaction.
+
+  # ============================================================================
+  # 5. HARDWARE TELEMETRY & SEGMENTED WAL
+  # ============================================================================
+  /api/v1/telemetry/ingest:
+    post:
+      summary: Ingest Telemetry Frame (JSON)
+      description: Ingests sensor reading, appends framed record to active WAL segment, and fsyncs to disk.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorReading'
+      responses:
+        '201':
+          description: Telemetry durable.
+
+  /api/v1/telemetry/ingest-binary:
+    post:
+      summary: Ingest Binary Telemetry Packet
+      description: Ingests 24-byte hardware telemetry frame, validating IEEE 802.3 CRC-32 checksum.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Binary packet checksum verified and committed to WAL.
+        '400':
+          description: CRC-32 checksum mismatch or malformed packet.
+
+  /api/v1/telemetry/sensors/{sensorId}/latest:
+    get:
+      summary: Get Latest Sensor State
+      parameters:
+        - name: sensorId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorReading'
+
+  /api/v1/telemetry/snapshot:
+    post:
+      summary: Trigger WAL Compaction & Snapshot
+      description: Commits immutable sensor snapshot and prunes sealed historical WAL segments.
+      responses:
+        '200':
+          description: Snapshot created and old segments pruned.
+
+  # ============================================================================
+  # 6. GEOSPATIAL INCIDENTS & REAL-TIME WEBSOCKET
+  # ============================================================================
+  /api/v1/incidents:
+    get:
+      summary: Query Incidents by Radius
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: lon
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: radius_km
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 15.0
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incident'
+    post:
+      summary: Report Waste Incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncidentRequest'
+      responses:
+        '201':
+          description: Incident reported, indexed in Redis GEO, and broadcast via WebSocket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+
+  /api/v1/incidents/{id}/status:
+    patch:
+      summary: Advance Incident State Machine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [RAISED, IN_PROGRESS, RESOLVED, DISMISSED]
+                assignee_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Incident transitioned and broadcast to subscribers.
+
+  /ws/incidents:
+    get:
+      summary: Real-Time WebSocket Incident Stream
+      description: |
+        Upgrades to persistent WebSocket connection.
+        - Provides immediate `SNAPSHOT_SYNC` state on connect.
+        - Streams sequenced events (`INCIDENT_CREATED`, `INCIDENT_UPDATED`).
+        - Supports reconnect resync via `last_seq` query parameter using ring buffer.
+      parameters:
+        - name: client_id
+          in: query
+          schema:
+            type: string
+        - name: last_seq
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '101':
+          description: Switching Protocols to WebSocket.
+
+  # ============================================================================
+  # 7. KACHRASETH AI TRIAGE AGENT
+  # ============================================================================
+  /api/v1/triage:
+    post:
+      summary: Synchronous AI Prompt Triage
+      description: Rule-based zero-cost classifier resolving structured tools or asking clarification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriageRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriageResponse'
+
+  /api/v1/triage/async:
+    post:
+      summary: Asynchronous Citizen Intake
+      description: Non-blocking intake submission returning `202 Accepted` and enqueuing report for worker processing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriageRequest'
+      responses:
+        '202':
+          description: Report queued for asynchronous processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intake_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: RECEIVED
+                  stream:
+                    type: string
+                    example: ORGANIC
+
+  /api/v1/triage/intake/{id}:
+    get:
+      summary: Get Intake Lifecycle Status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenIntake'
+
+  /api/v1/ai/tools/{toolName}:
+    post:
+      summary: Direct AI Tool Execution
+      parameters:
+        - name: toolName
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [report_waste_incident, find_nearest_hub, get_user_credits]
+      responses:
+        '200':
+          description: Tool executed successfully.
+        '400':
+          description: Tool validation or guardrail violation.
+
+# ==============================================================================
+# COMPONENTS & SCHEMAS
+# ==============================================================================
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+
+    Hub:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    CreateHubRequest:
+      type: object
+      required: [name, latitude, longitude]
+      properties:
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    CreateSlotRequest:
+      type: object
+      required: [start_time, end_time, capacity]
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+
+    BookingRequest:
+      type: object
+      required: [slot_id, citizen_id, stream_type]
+      properties:
+        slot_id:
+          type: string
+          format: uuid
+        citizen_id:
+          type: string
+          format: uuid
+        stream_type:
+          type: string
+          enum: [PLASTICS, ORGANIC, METALS, GLASS, PAPER, EWASTE, HAZARDOUS]
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_id:
+          type: string
+          format: uuid
+        citizen_id:
+          type: string
+          format: uuid
+        stream_type:
+          type: string
+        status:
+          type: string
+          example: CONFIRMED
+        created_at:
+          type: string
+          format: date-time
+
+    CreateSubmissionRequest:
+      type: object
+      required: [qr_identity, citizen_id, hub_id, material, weight_kg]
+      properties:
+        qr_identity:
+          type: string
+        citizen_id:
+          type: string
+          format: uuid
+        hub_id:
+          type: string
+          format: uuid
+        material:
+          type: string
+        weight_kg:
+          type: number
+
+    InspectSubmissionRequest:
+      type: object
+      required: [inspector_id, passed]
+      properties:
+        inspector_id:
+          type: string
+          format: uuid
+        passed:
+          type: boolean
+        notes:
+          type: string
+
+    RecyclingSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        qr_identity:
+          type: string
+        citizen_id:
+          type: string
+          format: uuid
+        material:
+          type: string
+        weight_kg:
+          type: number
+        state:
+          type: string
+          enum: [SCANNED, INSPECTION_PASSED, INSPECTION_FAILED, CREDITED, REJECTED]
+        points_awarded:
+          type: integer
+
+    CitizenProfile:
+      type: object
+      properties:
+        citizen_id:
+          type: string
+          format: uuid
+        balance_points:
+          type: integer
+
+    RedeemPerkRequest:
+      type: object
+      required: [citizen_id, perk_name, points_cost]
+      properties:
+        citizen_id:
+          type: string
+          format: uuid
+        perk_name:
+          type: string
+        points_cost:
+          type: integer
+
+    SensorReading:
+      type: object
+      required: [sensor_id, stream_type, fill_level_percent, battery_millivolts, temperature_celsius]
+      properties:
+        id:
+          type: string
+          format: uuid
+        sensor_id:
+          type: string
+        sequence_id:
+          type: integer
+          format: int64
+        stream_type:
+          type: string
+        fill_level_percent:
+          type: number
+        battery_millivolts:
+          type: integer
+        temperature_celsius:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reporter_id:
+          type: string
+          format: uuid
+        stream_type:
+          type: string
+        description:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        status:
+          type: string
+          enum: [RAISED, IN_PROGRESS, RESOLVED, DISMISSED]
+
+    CreateIncidentRequest:
+      type: object
+      required: [description, stream_type, severity, latitude, longitude]
+      properties:
+        description:
+          type: string
+        stream_type:
+          type: string
+        severity:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+
+    TriageRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        coordinates:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        citizen_id:
+          type: string
+          format: uuid
+
+    TriageResponse:
+      type: object
+      properties:
+        action_taken:
+          type: string
+          enum: [TOOL_EXECUTED, CLARIFICATION_REQUIRED]
+        tool_name:
+          type: string
+        message:
+          type: string
+        confidence_score:
+          type: number
+
+    CitizenIntake:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        citizen_id:
+          type: string
+          format: uuid
+        raw_narrative:
+          type: string
+        extracted_stream:
+          type: string
+        extracted_severity:
+          type: string
+        status:
+          type: string
+          enum: [RECEIVED, PROCESSING, INCIDENT_CREATED, FAILED]
+        incident_id:
+          type: string
+          format: uuid
