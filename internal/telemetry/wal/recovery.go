@@ -2,7 +2,9 @@ package wal
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"time"
 )
@@ -64,9 +66,12 @@ func (r *RecoveryEngine) ReplayUncommitted(ctx context.Context) (int, error) {
 		segPath := segments[i]
 		lastSegmentFile = filepath.Base(segPath)
 
-		records, err := ReadSegment(segPath)
-		if err != nil {
-			return replayedCount, fmt.Errorf("error reading wal segment %s: %w", segPath, err)
+		records, readErr := ReadSegment(segPath)
+		if readErr != nil && !errors.Is(readErr, ErrSegmentCorrupt) {
+			return replayedCount, fmt.Errorf("error reading wal segment %s: %w", segPath, readErr)
+		}
+		if errors.Is(readErr, ErrSegmentCorrupt) {
+			slog.Warn("WAL segment contains corrupted frames, continuing with partial records", "segment", segPath, "error", readErr)
 		}
 
 		for _, rec := range records {
@@ -92,7 +97,9 @@ func (r *RecoveryEngine) ReplayUncommitted(ctx context.Context) (int, error) {
 			LastSequenceID: maxSequenceID,
 			CheckpointedAt: time.Now(),
 		}
-		_ = r.checkpointStore.SaveCheckpoint(ctx, newCP)
+		if cpErr := r.checkpointStore.SaveCheckpoint(ctx, newCP); cpErr != nil {
+			slog.Error("Failed to save WAL checkpoint after replay", "segment", lastSegmentFile, "sequence", maxSequenceID, "error", cpErr)
+		}
 	}
 
 	return replayedCount, nil

@@ -13,23 +13,27 @@ import (
 
 // Redis Lua script for atomic admission reservation
 const reserveLuaScript = `
-local slot_key = KEYS[1]
-local tokens_key = KEYS[2]
+local tokens_key = KEYS[1]
 local token_id = ARGV[1]
 local total_capacity = tonumber(ARGV[2])
 local ttl_seconds = tonumber(ARGV[3])
 
--- Get current booked/reserved count
-local current_reserved = tonumber(redis.call('SCARD', tokens_key) or 0)
-
-if current_reserved >= total_capacity then
-    return 0 -- Capacity exhausted
+-- Purge expired tokens from the set before counting
+local members = redis.call('SMEMBERS', tokens_key)
+for _, mid in ipairs(members) do
+    if redis.call('EXISTS', 'token:' .. mid) == 0 then
+        redis.call('SREM', tokens_key, mid)
+    end
 end
 
--- Add token with pending status
+local current_reserved = tonumber(redis.call('SCARD', tokens_key))
+if current_reserved >= total_capacity then
+    return 0
+end
+
 redis.call('SADD', tokens_key, token_id)
 redis.call('SETEX', 'token:' .. token_id, ttl_seconds, 'PENDING')
-return 1 -- Capacity granted
+return 1
 `
 
 // Redis Lua script for idempotent release
@@ -74,14 +78,13 @@ func NewRedisTokenStore(client *redis.Client) *RedisTokenStore {
 
 func (r *RedisTokenStore) AcquireToken(ctx context.Context, slotID uuid.UUID, totalCapacity int, ttl time.Duration) (*ReservationToken, error) {
 	tokenID := uuid.New().String()
-	slotKey := fmt.Sprintf("slot:%s:capacity", slotID.String())
 	tokensKey := fmt.Sprintf("slot:%s:tokens", slotID.String())
 	ttlSec := int(ttl.Seconds())
 	if ttlSec <= 0 {
 		ttlSec = 30
 	}
 
-	res, err := r.client.Eval(ctx, reserveLuaScript, []string{slotKey, tokensKey}, tokenID, totalCapacity, ttlSec).Result()
+	res, err := r.client.Eval(ctx, reserveLuaScript, []string{tokensKey}, tokenID, totalCapacity, ttlSec).Result()
 	if err != nil {
 		return nil, fmt.Errorf("redis lua error on acquire: %w", err)
 	}
@@ -112,8 +115,19 @@ func (r *RedisTokenStore) ConfirmToken(ctx context.Context, tokenID string, slot
 
 func (r *RedisTokenStore) Reconcile(ctx context.Context, slotID uuid.UUID, actualConfirmedCount int) error {
 	tokensKey := fmt.Sprintf("slot:%s:tokens", slotID.String())
-	// Clean up stale non-confirmed keys if needed
-	_ = r.client.Del(ctx, tokensKey).Err()
+	// Purge expired/stale tokens from the set
+	members, err := r.client.SMembers(ctx, tokensKey).Result()
+	if err != nil {
+		return err
+	}
+	for _, mid := range members {
+		tokenKey := fmt.Sprintf("token:%s", mid)
+		exists, _ := r.client.Exists(ctx, tokenKey).Result()
+		if exists == 0 {
+			// Token expired or was released; remove from set
+			_ = r.client.SRem(ctx, tokensKey, mid).Err()
+		}
+	}
 	return nil
 }
 

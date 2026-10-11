@@ -44,12 +44,12 @@ func NewToolRegistry(incidentsSvc *incidents.Service, hubsSvc *hubs.Service, cre
 
 // ReportIncidentParams defines the typed parameters for report_waste_incident
 type ReportIncidentParams struct {
-	Description        string   `json:"description"`
-	ReportedLocation   string   `json:"reported_location,omitempty"`
-	CategorySuggestion string   `json:"category_suggestion"`
-	Severity           string   `json:"severity"`
-	Latitude           float64  `json:"latitude"`
-	Longitude          float64  `json:"longitude"`
+	Description        string  `json:"description"`
+	ReportedLocation   string  `json:"reported_location,omitempty"`
+	CategorySuggestion string  `json:"category_suggestion"`
+	Severity           string  `json:"severity"`
+	Latitude           float64 `json:"latitude"`
+	Longitude          float64 `json:"longitude"`
 }
 
 // ExecuteReportWasteIncident enforces backend caller authorization and validates inputs

@@ -2,8 +2,10 @@ package wal_test
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -197,4 +199,65 @@ func TestWAL_ConcurrentAppends(t *testing.T) {
 	}
 
 	assert.Equal(t, concurrency*recordsPerWorker, totalRead)
+}
+
+func TestWAL_CorruptPayload_ReturnsErrSegmentCorrupt(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "wal_corrupt_test_*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	cfg := wal.DefaultConfig(tempDir)
+	engine, err := wal.NewSegmentedEngine(cfg)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	// Write 2 valid records
+	for i := uint64(1); i <= 2; i++ {
+		rec := &wal.Record{
+			SequenceID: i,
+			SensorID:   "SENSOR-CORRUPT",
+			StreamType: "METALS",
+			Timestamp:  time.Now(),
+			Payload:    []byte(fmt.Sprintf("valid-data-%d", i)),
+		}
+		_, err := engine.Append(ctx, rec)
+		require.NoError(t, err)
+	}
+	require.NoError(t, engine.Close())
+
+	segments, err := engine.ListSegments()
+	require.NoError(t, err)
+	require.Len(t, segments, 1)
+
+	// Corrupt a byte in the middle of the second record payload
+	segPath := segments[0]
+	data, err := os.ReadFile(segPath)
+	require.NoError(t, err)
+
+	// Flip a bit in the file near the end
+	data[len(data)-10] ^= 0xFF
+	require.NoError(t, os.WriteFile(segPath, data, 0644))
+
+	// Reading the corrupted segment should return at least record 1 and ErrSegmentCorrupt
+	recs, err := wal.ReadSegment(segPath)
+	assert.ErrorIs(t, err, wal.ErrSegmentCorrupt)
+	assert.GreaterOrEqual(t, len(recs), 1, "Should recover at least the valid first record")
+}
+
+func TestWAL_MaxPayloadSize_BoundsProtection(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "wal_overflow_test_*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Create a segment file with an impossibly large length header (0xFFFFFFFF = 4GB)
+	segPath := filepath.Join(tempDir, "wal_0000000000000001.log")
+	bogusFrame := make([]byte, 8)
+	binary.BigEndian.PutUint32(bogusFrame[0:4], 0xFFFFFFFF) // 4GB payload length
+	binary.BigEndian.PutUint32(bogusFrame[4:8], 0x12345678) // dummy CRC
+	require.NoError(t, os.WriteFile(segPath, bogusFrame, 0644))
+
+	// Must not panic or allocate 4GB OOM
+	recs, err := wal.ReadSegment(segPath)
+	assert.NoError(t, err)
+	assert.Empty(t, recs)
 }

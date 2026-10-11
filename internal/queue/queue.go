@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 )
 
@@ -63,7 +64,7 @@ func (q *MemoryQueue) Consume(ctx context.Context, topic string, handler func(ct
 				return nil
 			}
 			if err := handler(ctx, msg); err != nil {
-				// Handle error or dead-letter queue
+				slog.Error("Queue consumer message handler failed", "topic", topic, "error", err)
 			}
 		}
 	}

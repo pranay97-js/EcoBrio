@@ -16,15 +16,17 @@ import (
 	"sync"
 )
 
+const MaxPayloadSize = 16 * 1024 * 1024 // 16MB safety limit
+
 var (
 	ErrSegmentCorrupt = errors.New("wal segment contains corrupted or torn frame")
 	ErrClosed         = errors.New("wal engine is closed")
 )
 
 type Config struct {
-	Dir              string
-	MaxSegmentSize   int64 // e.g. 10 * 1024 * 1024 (10MB)
-	FsyncEveryWrite  bool
+	Dir             string
+	MaxSegmentSize  int64 // e.g. 10 * 1024 * 1024 (10MB)
+	FsyncEveryWrite bool
 }
 
 func DefaultConfig(dir string) Config {
@@ -248,7 +250,7 @@ func (e *SegmentedEngine) PruneSegmentsOlderThan(retentionSequence uint64) ([]st
 
 		path := filepath.Join(e.cfg.Dir, entry.Name())
 		records, err := ReadSegment(path)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrSegmentCorrupt) {
 			continue
 		}
 
@@ -296,6 +298,11 @@ func ReadSegment(path string) ([]Record, error) {
 		payloadLen := binary.BigEndian.Uint32(headerBuf[0:4])
 		storedCRC := binary.BigEndian.Uint32(headerBuf[4:8])
 
+		if payloadLen == 0 || payloadLen > MaxPayloadSize {
+			// Corrupt or unreasonable length field; halt playback
+			break
+		}
+
 		payload := make([]byte, payloadLen)
 		_, err = io.ReadFull(f, payload)
 		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
@@ -308,13 +315,13 @@ func ReadSegment(path string) ([]Record, error) {
 
 		// Validate CRC32
 		if crc32.ChecksumIEEE(payload) != storedCRC {
-			// Corrupted frame detected: halt playback at boundary
-			break
+			// Corrupted frame detected: return records parsed so far with corruption error
+			return records, ErrSegmentCorrupt
 		}
 
 		var rec Record
 		if err := json.Unmarshal(payload, &rec); err != nil {
-			break
+			return records, ErrSegmentCorrupt
 		}
 
 		records = append(records, rec)

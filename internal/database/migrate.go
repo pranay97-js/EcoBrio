@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -25,6 +26,10 @@ func NewMigrator(pool *pgxpool.Pool) *Migrator {
 
 // RunMigrations applies all pending .up.sql files in alphabetical order
 func (m *Migrator) RunMigrations(ctx context.Context, migrationsDir string) error {
+	if m.pool == nil {
+		return errors.New("database pool is nil")
+	}
+
 	// Ensure migrations tracking table exists
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS schema_migrations (

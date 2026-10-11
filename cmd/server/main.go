@@ -175,8 +175,9 @@ func main() {
 		slog.Info("Operating with in-memory persistence fallback")
 		memHubs := hubs.NewMemoryRepository()
 		seedMemoryHubs(memHubs)
-		hubsRepo = memHubs
-		incidentsRepo = incidents.NewMemoryRepository()
+		memIncidents := incidents.NewMemoryRepository()
+		seedMemoryIncidents(memIncidents)
+		incidentsRepo = memIncidents
 
 		memBooking := booking.NewMemoryRepository()
 		seedMemoryBookingSlots(memBooking)
@@ -399,5 +400,42 @@ func seedMemoryLedger(repo *ledger.MemoryRepository, svc *ledger.Service) {
 			{AccountCode: "SYSTEM_ISSUANCE_RESERVE", Points: 500, IsCredit: false},
 			{AccountCode: code, Points: 500, IsCredit: true},
 		},
+	})
+}
+
+func seedMemoryIncidents(repo *incidents.MemoryRepository) {
+	ctx := context.Background()
+	_ = repo.Create(ctx, &incidents.Incident{
+		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000001"),
+		Description: "High-density lithium battery bank overflow at Metro Transit Terminal",
+		StreamType:  "EWASTE",
+		Severity:    incidents.SeverityCritical,
+		Latitude:    28.6139,
+		Longitude:   77.2090,
+		Status:      incidents.StatusRaised,
+		CreatedAt:   time.Now().Add(-15 * time.Minute),
+		UpdatedAt:   time.Now().Add(-15 * time.Minute),
+	})
+	_ = repo.Create(ctx, &incidents.Incident{
+		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000002"),
+		Description: "Industrial polymer packaging bales discarded along Riverside canal",
+		StreamType:  "PLASTICS",
+		Severity:    incidents.SeverityHigh,
+		Latitude:    28.6250,
+		Longitude:   77.2180,
+		Status:      incidents.StatusInProgress,
+		CreatedAt:   time.Now().Add(-45 * time.Minute),
+		UpdatedAt:   time.Now().Add(-20 * time.Minute),
+	})
+	_ = repo.Create(ctx, &incidents.Incident{
+		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000003"),
+		Description: "Commercial restaurant organic bio-waste dump requiring rapid dispatch",
+		StreamType:  "ORGANIC",
+		Severity:    incidents.SeverityMedium,
+		Latitude:    28.6080,
+		Longitude:   77.1950,
+		Status:      incidents.StatusRaised,
+		CreatedAt:   time.Now().Add(-5 * time.Minute),
+		UpdatedAt:   time.Now().Add(-5 * time.Minute),
 	})
 }

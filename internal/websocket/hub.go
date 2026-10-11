@@ -20,16 +20,16 @@ type SnapshotProvider func(ctx context.Context) (any, uint64, error)
 
 // Hub manages persistent WebSocket connections with bounded queues and replay capabilities
 type Hub struct {
-	mu                 sync.RWMutex
-	clients            map[*Client]struct{}
-	register           chan *Client
-	unregister         chan *Client
-	ringBuffer         *RingBuffer
-	seqCounter         atomic.Uint64
-	slowConsumerDrops  atomic.Uint64
-	totalBroadcasts    atomic.Uint64
-	snapshotProvider   SnapshotProvider
-	upgrader           websocket.Upgrader
+	mu                  sync.RWMutex
+	clients             map[*Client]struct{}
+	register            chan *Client
+	unregister          chan *Client
+	ringBuffer          *RingBuffer
+	seqCounter          atomic.Uint64
+	slowConsumerDrops   atomic.Uint64
+	totalBroadcasts     atomic.Uint64
+	snapshotProvider    SnapshotProvider
+	upgrader            websocket.Upgrader
 	clientQueueCapacity int
 }
 
@@ -292,11 +292,11 @@ func (h *Hub) GetStats() map[string]any {
 	h.mu.RUnlock()
 
 	return map[string]any{
-		"client_count":          clientCount,
-		"current_sequence":      h.seqCounter.Load(),
-		"total_broadcasts":      h.totalBroadcasts.Load(),
-		"slow_consumer_drops":  h.slowConsumerDrops.Load(),
-		"ring_buffer_size":      h.ringBuffer.Size(),
+		"client_count":           clientCount,
+		"current_sequence":       h.seqCounter.Load(),
+		"total_broadcasts":       h.totalBroadcasts.Load(),
+		"slow_consumer_drops":    h.slowConsumerDrops.Load(),
+		"ring_buffer_size":       h.ringBuffer.Size(),
 		"ring_buffer_oldest_seq": h.ringBuffer.OldestSequence(),
 		"ring_buffer_latest_seq": h.ringBuffer.LatestSequence(),
 	}

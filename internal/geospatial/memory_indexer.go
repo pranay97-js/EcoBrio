@@ -32,7 +32,11 @@ func (m *MemoryIndexer) SearchNearby(ctx context.Context, lat, lon, radiusKm flo
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var results []GeoPoint
+	if limit <= 0 {
+		limit = 50
+	}
+
+	results := make([]GeoPoint, 0)
 	for _, p := range m.points {
 		dist := HaversineKm(lat, lon, p.Latitude, p.Longitude)
 		if dist <= radiusKm {
@@ -47,7 +51,7 @@ func (m *MemoryIndexer) SearchNearby(ctx context.Context, lat, lon, radiusKm flo
 		return results[i].DistanceKm < results[j].DistanceKm
 	})
 
-	if limit > 0 && len(results) > limit {
+	if len(results) > limit {
 		results = results[:limit]
 	}
 

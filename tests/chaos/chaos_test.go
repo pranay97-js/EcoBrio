@@ -94,8 +94,8 @@ func TestChaos_AbruptProcessCrashDuringWrites(t *testing.T) {
 
 	// Let writes run for a short duration, then simulate sudden SIGKILL
 	time.Sleep(60 * time.Millisecond)
-	cancel()   // Instantly stop workers
-	wg.Wait()  // Wait for in-flight goroutines to halt
+	cancel()  // Instantly stop workers
+	wg.Wait() // Wait for in-flight goroutines to halt
 
 	committedMu.Lock()
 	preCrashCount := len(committedRecords)

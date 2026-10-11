@@ -51,7 +51,7 @@ func (h *Handler) handleCreateBooking(w http.ResponseWriter, r *http.Request) {
 			api.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Collection slot not found")
 			return
 		}
-		api.WriteError(w, http.StatusBadRequest, "INVALID_INPUT", err.Error())
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "an unexpected error occurred")
 		return
 	}
 

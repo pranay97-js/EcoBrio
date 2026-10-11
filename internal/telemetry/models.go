@@ -8,11 +8,11 @@ import (
 )
 
 var (
-	ErrCorruptPacket      = errors.New("corrupt telemetry packet: CRC-32 checksum mismatch")
-	ErrInvalidFillLevel   = errors.New("invalid fill level: must be between 0.00% and 100.00%")
-	ErrInvalidStreamType  = errors.New("invalid waste stream type")
-	ErrSensorNotFound     = errors.New("sensor not found or no telemetry recorded")
-	ErrDuplicateSequence  = errors.New("duplicate telemetry sequence ID for sensor")
+	ErrCorruptPacket     = errors.New("corrupt telemetry packet: CRC-32 checksum mismatch")
+	ErrInvalidFillLevel  = errors.New("invalid fill level: must be between 0.00% and 100.00%")
+	ErrInvalidStreamType = errors.New("invalid waste stream type")
+	ErrSensorNotFound    = errors.New("sensor not found or no telemetry recorded")
+	ErrDuplicateSequence = errors.New("duplicate telemetry sequence ID for sensor")
 )
 
 // Valid waste stream types matching Postgres enum waste_stream_type

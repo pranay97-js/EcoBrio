@@ -106,6 +106,21 @@ func (r *PostgresRepository) PostJournalEntry(ctx context.Context, entry *Journa
 		}
 	}
 
+	// Verify no citizen wallet goes negative after this transaction
+	for _, p := range entry.Postings {
+		if !p.IsCredit {
+			// Check the running balance of the debited account within the transaction
+			var balance int64
+			balQuery := `SELECT COALESCE(SUM(CASE WHEN is_credit THEN amount_points ELSE -amount_points END), 0) FROM ledger_postings WHERE account_id = $1`
+			if err := tx.QueryRow(ctx, balQuery, p.AccountID).Scan(&balance); err != nil {
+				return fmt.Errorf("failed checking post-debit balance: %w", err)
+			}
+			if balance < 0 {
+				return fmt.Errorf("%w: post-transaction balance would be %d for account %s", ErrInsufficientBalance, balance, p.AccountID)
+			}
+		}
+	}
+
 	return tx.Commit(ctx)
 }
 

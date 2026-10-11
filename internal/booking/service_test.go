@@ -196,4 +196,21 @@ func TestReconciliationWorker(t *testing.T) {
 	if booked != 2 {
 		t.Errorf("database truth altered during reconciliation, expected 2 got %d", booked)
 	}
+
+	// Verify token store active tokens were purged of orphan:
+	// Total capacity is 5, 2 confirmed. Exactly 3 additional tokens should be acquirable.
+	for i := 0; i < 3; i++ {
+		tkn, aErr := tokenStore.AcquireToken(context.Background(), slotID, 5, 30*time.Second)
+		if aErr != nil {
+			t.Fatalf("expected to acquire remaining capacity %d/3, got error: %v", i+1, aErr)
+		}
+		if tkn == nil {
+			t.Fatal("expected non-nil token")
+		}
+	}
+	// 6th token must be rejected
+	_, overflowErr := tokenStore.AcquireToken(context.Background(), slotID, 5, 30*time.Second)
+	if !errors.Is(overflowErr, ErrCapacityExceeded) {
+		t.Errorf("expected ErrCapacityExceeded after capacity full, got %v", overflowErr)
+	}
 }

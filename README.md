@@ -158,6 +158,10 @@ make run
 
 ## 6. Architecture & Delivery Documentation
 
+- [**docs/audit/FINAL_AUDIT_REPORT.md**](docs/audit/FINAL_AUDIT_REPORT.md): Final Comprehensive Technical Code Audit & Release Validation Report.
+- [**docs/audit/REQUIREMENT_TRACEABILITY.md**](docs/audit/REQUIREMENT_TRACEABILITY.md): Complete Requirement Traceability Matrix (B01-B10, C01-C14, W01-W14, Q01-Q10, G01-G10, A01-A12).
+- [**docs/audit/TEST_PLAN_AND_RESULTS.md**](docs/audit/TEST_PLAN_AND_RESULTS.md): Detailed Test Plan & Execution Results (82 tests across 21 packages).
+- [**docs/audit/REMAINING_ISSUES.md**](docs/audit/REMAINING_ISSUES.md): Remaining Issues, Environmental Constraints & Known Risks.
 - [**BENCHMARK_REPORT.md**](BENCHMARK_REPORT.md): Complete benchmark protocol, latency percentiles, throughput data, and hardware specifications.
 - [**DEMO_GUIDE.md**](DEMO_GUIDE.md): 5-Minute technical demo script with exact commands and interview positioning deep dives.
 - [**docs/openapi.yaml**](docs/openapi.yaml): Full OpenAPI 3.0 specification covering all REST and WebSocket contracts.

@@ -3,6 +3,7 @@ package credits
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -75,7 +76,9 @@ func (s *Service) CreateSubmission(ctx context.Context, req CreateSubmissionRequ
 		},
 	)
 	if err == nil && s.outboxRepo != nil {
-		_ = s.outboxRepo.SaveEvent(ctx, evt)
+		if saveErr := s.outboxRepo.SaveEvent(ctx, evt); saveErr != nil {
+			slog.Error("Failed to save transactional outbox event", "event_type", evt.EventType, "aggregate_id", evt.AggregateID, "error", saveErr)
+		}
 	}
 
 	return sub, nil
@@ -120,7 +123,9 @@ func (s *Service) InspectSubmission(ctx context.Context, id uuid.UUID, req Inspe
 			},
 		)
 		if err == nil && s.outboxRepo != nil {
-			_ = s.outboxRepo.SaveEvent(ctx, evt)
+			if saveErr := s.outboxRepo.SaveEvent(ctx, evt); saveErr != nil {
+				slog.Error("Failed to save transactional outbox event", "event_type", evt.EventType, "aggregate_id", evt.AggregateID, "error", saveErr)
+			}
 		}
 
 		return sub, nil
@@ -168,7 +173,9 @@ func (s *Service) InspectSubmission(ctx context.Context, id uuid.UUID, req Inspe
 		},
 	)
 	if err == nil && s.outboxRepo != nil {
-		_ = s.outboxRepo.SaveEvent(ctx, evt)
+		if saveErr := s.outboxRepo.SaveEvent(ctx, evt); saveErr != nil {
+			slog.Error("Failed to save transactional outbox event", "event_type", evt.EventType, "aggregate_id", evt.AggregateID, "error", saveErr)
+		}
 	}
 
 	sub.State = StateCredited
@@ -264,7 +271,9 @@ func (s *Service) RedeemPerkSaga(ctx context.Context, req RedeemPerkRequest, ide
 		},
 	)
 	if err == nil && s.outboxRepo != nil {
-		_ = s.outboxRepo.SaveEvent(ctx, evtHold)
+		if saveErr := s.outboxRepo.SaveEvent(ctx, evtHold); saveErr != nil {
+			slog.Error("Failed to save transactional outbox event", "event_type", evtHold.EventType, "aggregate_id", evtHold.AggregateID, "error", saveErr)
+		}
 	}
 
 	// Step 2: Downstream Voucher Provider Fulfillment (Simulated)
@@ -298,14 +307,16 @@ func (s *Service) RedeemPerkSaga(ctx context.Context, req RedeemPerkRequest, ide
 			key,
 			req.CitizenID.String(),
 			map[string]any{
-				"citizen_id":       req.CitizenID,
-				"perk_name":        req.PerkName,
-				"points_restored":  req.PointsCost,
-				"failure_reason":   "downstream voucher provider simulated failure",
+				"citizen_id":      req.CitizenID,
+				"perk_name":       req.PerkName,
+				"points_restored": req.PointsCost,
+				"failure_reason":  "downstream voucher provider simulated failure",
 			},
 		)
 		if err == nil && s.outboxRepo != nil {
-			_ = s.outboxRepo.SaveEvent(ctx, evtComp)
+			if saveErr := s.outboxRepo.SaveEvent(ctx, evtComp); saveErr != nil {
+				slog.Error("Failed to save transactional outbox event", "event_type", evtComp.EventType, "aggregate_id", evtComp.AggregateID, "error", saveErr)
+			}
 		}
 
 		return nil, fmt.Errorf("%w: voucher provider unavailable, points held in escrow were fully restored to your citizen wallet", ErrVoucherFailed)
@@ -350,7 +361,9 @@ func (s *Service) RedeemPerkSaga(ctx context.Context, req RedeemPerkRequest, ide
 		},
 	)
 	if err == nil && s.outboxRepo != nil {
-		_ = s.outboxRepo.SaveEvent(ctx, evtRedeemed)
+		if saveErr := s.outboxRepo.SaveEvent(ctx, evtRedeemed); saveErr != nil {
+			slog.Error("Failed to save transactional outbox event", "event_type", evtRedeemed.EventType, "aggregate_id", evtRedeemed.AggregateID, "error", saveErr)
+		}
 	}
 
 	remainingBal, _ := s.ledgerService.GetCitizenBalance(ctx, req.CitizenID)

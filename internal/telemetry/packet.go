@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PacketMagic = uint16(0xEB01)
+	PacketMagic   = uint16(0xEB01)
 	MinPacketSize = 2 + 8 + 1 + 1 + 2 + 2 + 2 + 8 + 4 // 30 bytes minimum (with 1-byte sensor ID)
 )
 
@@ -37,15 +37,15 @@ var IDToStreamType = map[uint8]string{
 
 // BinaryPacket represents a hardware-encoded sensor frame
 type BinaryPacket struct {
-	Magic             uint16
-	SequenceID        uint64
-	SensorID          string
-	StreamType        string
-	FillLevelPercent  float64
-	BatteryMillivolts int
+	Magic              uint16
+	SequenceID         uint64
+	SensorID           string
+	StreamType         string
+	FillLevelPercent   float64
+	BatteryMillivolts  int
 	TemperatureCelsius float64
-	Timestamp         time.Time
-	CRC32             uint32
+	Timestamp          time.Time
+	CRC32              uint32
 }
 
 // EncodePacket serializes a sensor reading into a binary frame with CRC-32 checksum

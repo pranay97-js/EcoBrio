@@ -157,12 +157,12 @@ func (s *Service) ApplyRecord(ctx context.Context, rec *wal.Record) error {
 
 	if reading == nil {
 		reading = &SensorReading{
-			ID:                 uuid.New(),
-			SensorID:           rec.SensorID,
-			SequenceID:         rec.SequenceID,
-			StreamType:         rec.StreamType,
-			Timestamp:          rec.Timestamp,
-			AppliedAt:          time.Now(),
+			ID:         uuid.New(),
+			SensorID:   rec.SensorID,
+			SequenceID: rec.SequenceID,
+			StreamType: rec.StreamType,
+			Timestamp:  rec.Timestamp,
+			AppliedAt:  time.Now(),
 		}
 	}
 

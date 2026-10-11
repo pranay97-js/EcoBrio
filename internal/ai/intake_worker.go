@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"ecobrio/internal/api"
@@ -90,6 +91,12 @@ func (s *IntakeService) ProcessIntakeItem(ctx context.Context, intakeID uuid.UUI
 		return err
 	}
 
+	// Idempotency check: if already processed or in-progress, avoid duplicate incident generation
+	if intake.Status == IntakeStatusIncidentCreated && intake.IncidentID != nil {
+		slog.Info("Intake already processed into incident; skipping duplicate message", "intake_id", intake.ID, "incident_id", *intake.IncidentID)
+		return nil
+	}
+
 	// Transition to PROCESSING
 	intake.Status = IntakeStatusProcessing
 	_ = s.store.Update(ctx, intake)
@@ -150,13 +157,5 @@ func (s *IntakeService) GetIntake(ctx context.Context, id uuid.UUID) (*CitizenIn
 }
 
 func stringsToLower(s string) string {
-	var b []byte
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= 'A' && c <= 'Z' {
-			c += 'a' - 'A'
-		}
-		b = append(b, c)
-	}
-	return string(b)
+	return strings.ToLower(s)
 }

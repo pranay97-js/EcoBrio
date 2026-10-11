@@ -1075,7 +1075,7 @@ window.addEventListener('resize', () => {
 <div class="lg:w-5/12 flex flex-col justify-between gap-8">
 <div class="flex flex-col gap-5">
 <div class="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-container-high border border-primary/20 text-primary font-label-sm text-label-sm font-semibold w-max">
-<img src="/assets/kachraseth.jpg" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-primary/40">
+<img src="assets/kachraseth.jpg" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-primary/40">
 <span>KachraSeth AI Universal v3.1</span>
 </div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
@@ -1117,7 +1117,7 @@ window.addEventListener('resize', () => {
 <div class="flex items-center justify-between pb-4 border-b border-surface-container-highest/60">
 <div class="flex items-center gap-3">
 <div class="w-12 h-12 rounded-xl overflow-hidden border-2 border-primary/50 shadow-[0_0_16px_rgba(66,229,177,0.4)] shrink-0">
-<img src="/assets/kachraseth.jpg" alt="KachraSeth AI" class="w-full h-full object-cover">
+<img src="assets/kachraseth.jpg" alt="KachraSeth AI" class="w-full h-full object-cover">
 </div>
 <div>
 <p class="font-label-lg text-label-lg text-on-surface font-bold">KachraSeth Multi-Modal Agent</p>
@@ -1134,7 +1134,7 @@ window.addEventListener('resize', () => {
 <!-- AI Initial Bubble -->
 <div class="flex items-start gap-3 max-w-lg">
 <div class="w-8 h-8 rounded-lg overflow-hidden border border-primary/40 shrink-0 shadow-sm">
-  <img src="/assets/kachraseth.jpg" alt="KachraSeth" class="w-full h-full object-cover">
+  <img src="assets/kachraseth.jpg" alt="KachraSeth" class="w-full h-full object-cover">
 </div>
 <div class="p-3.5 rounded-2xl rounded-tl-sm bg-surface-container-high border border-outline-variant/30 text-on-surface font-body-sm text-body-sm shadow-sm">
   Namaste &amp; Hello! What waste stream are you managing today? I can segment organics, polymer plastics, metals, glass, paper, e-waste, or hazardous household materials.
@@ -1152,7 +1152,7 @@ window.addEventListener('resize', () => {
 <!-- AI Multi-Modal Structured Triage Output -->
 <div class="flex items-start gap-3 max-w-xl">
 <div class="w-8 h-8 rounded-lg overflow-hidden border border-primary/40 shrink-0 shadow-sm">
-  <img src="/assets/kachraseth.jpg" alt="KachraSeth" class="w-full h-full object-cover">
+  <img src="assets/kachraseth.jpg" alt="KachraSeth" class="w-full h-full object-cover">
 </div>
 <div class="p-4.5 rounded-2xl rounded-tl-sm bg-surface-container-highest border border-primary/20 shadow-md flex flex-col gap-3.5 w-full">
 <div class="flex items-center justify-between">
@@ -2046,6 +2046,7 @@ window.addEventListener('resize', () => {
 
     // Initialize map, WebSocket client, and chat listener on page load
     window.addEventListener('DOMContentLoaded', () => {
+      selectHub('central');
       initIncidentMap();
       connectWebSocket();
 

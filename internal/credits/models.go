@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrInvalidTransition = errors.New("illegal submission state transition")
+	ErrInvalidTransition  = errors.New("illegal submission state transition")
 	ErrDuplicateQR        = errors.New("QR code has already been registered")
 	ErrSubmissionNotFound = errors.New("recycling submission not found")
 	ErrVoucherFailed      = errors.New("downstream voucher provider failed")

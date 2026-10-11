@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch EcoBrio Server",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/server",
+      "env": {
+        "PORT": "8080",
+        "ENV": "development",
+        "LOG_LEVEL": "info"
+      }
+    }
+  ]
+}

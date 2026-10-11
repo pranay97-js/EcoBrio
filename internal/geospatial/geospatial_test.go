@@ -23,6 +23,21 @@ func TestHaversineKm_KnownDistances(t *testing.T) {
 	// Distance from point to itself is 0
 	selfDist := geospatial.HaversineKm(londonLat, londonLon, londonLat, londonLon)
 	assert.Equal(t, 0.0, selfDist)
+
+	// Antipodal points (opposite sides of Earth) should not produce NaN
+	antiDist := geospatial.HaversineKm(90.0, 0.0, -90.0, 0.0)
+	assert.False(t, math.IsNaN(antiDist), "Antipodal distance should not be NaN")
+	assert.True(t, math.Abs(antiDist-20015.0) < 50.0, "Expected approx 20015 km, got %f", antiDist)
+}
+
+func TestMemoryIndexer_EmptyResultsNonNil(t *testing.T) {
+	ctx := context.Background()
+	idx := geospatial.NewMemoryIndexer()
+
+	results, err := idx.SearchNearby(ctx, 0, 0, 10.0, 0)
+	require.NoError(t, err)
+	assert.NotNil(t, results, "Empty search should return initialized non-nil slice")
+	assert.Empty(t, results)
 }
 
 func TestMemoryIndexer_Lifecycle(t *testing.T) {

@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -198,5 +199,24 @@ func TestBookingHTTPConcurrencyRace(t *testing.T) {
 	_, booked, _, _ := repo.GetSlotCapacity(nil, slotID)
 	if booked != availableCapacity {
 		t.Fatalf("Database oversold: booked is %d, max is %d", booked, availableCapacity)
+	}
+
+	// Invariant check: Exactly availableCapacity distinct booking entities exist in the store
+	var foundBookings int
+	for i := 0; i < concurrentClients; i++ {
+		key := fmt.Sprintf("race-client-%d", i)
+		b, err := repo.GetBookingByIdempotencyKey(context.Background(), key)
+		if err == nil && b != nil {
+			foundBookings++
+			if b.SlotID != slotID {
+				t.Errorf("booking slot_id mismatch: expected %s, got %s", slotID, b.SlotID)
+			}
+			if b.Status != "CONFIRMED" {
+				t.Errorf("booking status mismatch: expected CONFIRMED, got %s", b.Status)
+			}
+		}
+	}
+	if foundBookings != availableCapacity {
+		t.Fatalf("Database entity count mismatch: expected %d confirmed bookings in store, found %d", availableCapacity, foundBookings)
 	}
 }

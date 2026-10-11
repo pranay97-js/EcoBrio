@@ -223,4 +223,13 @@ func TestIntakeService_AsyncPipeline(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "ORGANIC", inc.StreamType)
 	assert.Equal(t, &citizenID, inc.ReporterID)
+
+	// 4. Test duplicate redelivery: processing the same intake again must be a no-op
+	firstIncidentID := *finalIntake.IncidentID
+	err = intakeSvc.ProcessIntakeItem(ctx, intake.ID)
+	require.NoError(t, err)
+
+	dupIntake, err := intakeSvc.GetIntake(ctx, intake.ID)
+	require.NoError(t, err)
+	assert.Equal(t, firstIncidentID, *dupIntake.IncidentID, "Incident ID must remain unchanged upon duplicate processing")
 }

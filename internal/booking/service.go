@@ -92,17 +92,17 @@ func (s *Service) ReserveSlot(ctx context.Context, req Request, idempotencyKey s
 
 	err = s.repo.CommitBooking(ctx, booking, fingerprint)
 	if err != nil {
-		// Failure compensation: If relational commit fails, release Redis reservation token idempotently
-		if relErr := s.tokenStore.ReleaseToken(ctx, token.TokenID, req.SlotID); relErr != nil {
-			slog.Error("Failed to release token after DB rejection", "token_id", token.TokenID, "error", relErr)
-		}
-
-		// Uncertain commit resolution: check if commit actually went through before reporting failure
+		// Uncertain commit resolution: check if commit actually went through before compensating
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-			if existing, checkErr := s.repo.GetBookingByIdempotencyKey(context.Background(), key); checkErr == nil {
+			if existing, checkErr := s.repo.GetBookingByIdempotencyKey(context.Background(), key); checkErr == nil && existing != nil {
 				_ = s.tokenStore.ConfirmToken(context.Background(), token.TokenID, req.SlotID)
 				return existing, nil
 			}
+		}
+
+		// Definite failure: release Redis reservation token idempotently
+		if relErr := s.tokenStore.ReleaseToken(ctx, token.TokenID, req.SlotID); relErr != nil {
+			slog.Error("Failed to release token after DB rejection", "token_id", token.TokenID, "error", relErr)
 		}
 		return nil, err
 	}

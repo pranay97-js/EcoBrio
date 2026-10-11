@@ -158,13 +158,13 @@ func (r *PostgresRepository) SaveIdempotencyRecord(ctx context.Context, rec *Ide
 
 // MemoryRepository provides a thread-safe in-memory store for isolated testing
 type MemoryRepository struct {
-	mu           sync.RWMutex
-	slotCapacity map[uuid.UUID]int // slotID -> totalCapacity
-	slotBooked   map[uuid.UUID]int // slotID -> currentBooked
-	slotVersion  map[uuid.UUID]int
-	bookings     map[uuid.UUID]Booking
+	mu            sync.RWMutex
+	slotCapacity  map[uuid.UUID]int // slotID -> totalCapacity
+	slotBooked    map[uuid.UUID]int // slotID -> currentBooked
+	slotVersion   map[uuid.UUID]int
+	bookings      map[uuid.UUID]Booking
 	bookingsByKey map[string]uuid.UUID
-	idempotency  map[string]IdempotencyRecord // "scope:key" -> record
+	idempotency   map[string]IdempotencyRecord // "scope:key" -> record
 }
 
 func NewMemoryRepository() *MemoryRepository {

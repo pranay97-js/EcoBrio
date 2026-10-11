@@ -20,16 +20,16 @@ const (
 
 // TriageResponse models the structured output returned to caller and UI
 type TriageResponse struct {
-	ActionTaken     string     `json:"action_taken"`
-	ToolName        string     `json:"tool_name,omitempty"`
-	ToolResult      any        `json:"tool_result,omitempty"`
-	Message         string     `json:"message"`
-	IntakeID        *uuid.UUID `json:"intake_id,omitempty"`
-	Status          string     `json:"status,omitempty"`
-	IncidentID      *uuid.UUID `json:"incident_id,omitempty"`
-	ConfidenceScore float64    `json:"confidence_score"`
-	ExtractedStream string     `json:"extracted_stream,omitempty"`
-	ExtractedSeverity string   `json:"extracted_severity,omitempty"`
+	ActionTaken       string     `json:"action_taken"`
+	ToolName          string     `json:"tool_name,omitempty"`
+	ToolResult        any        `json:"tool_result,omitempty"`
+	Message           string     `json:"message"`
+	IntakeID          *uuid.UUID `json:"intake_id,omitempty"`
+	Status            string     `json:"status,omitempty"`
+	IncidentID        *uuid.UUID `json:"incident_id,omitempty"`
+	ConfidenceScore   float64    `json:"confidence_score"`
+	ExtractedStream   string     `json:"extracted_stream,omitempty"`
+	ExtractedSeverity string     `json:"extracted_severity,omitempty"`
 }
 
 // Engine defines the interface for KachraSeth AI processing
