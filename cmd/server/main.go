@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"ecobrio/internal/ai"
 	"ecobrio/internal/booking"
 	"ecobrio/internal/config"
 	"ecobrio/internal/credits"
@@ -129,6 +130,7 @@ func main() {
 	var ledgerRepo ledger.Repository
 	var outboxRepo outbox.Repository
 	var queueProducer queue.Producer
+	var queueConsumer queue.Consumer
 	var creditsRepo credits.Repository
 	var telemetryRepo telemetry.Repository
 	var checkpointStore wal.CheckpointStore
@@ -143,7 +145,9 @@ func main() {
 		tokenStore = booking.NewRedisTokenStore(redisClient.Client)
 		ledgerRepo = ledger.NewPostgresRepository(pgClient.Pool)
 		outboxRepo = outbox.NewPostgresRepository(pgClient.Pool)
-		queueProducer = queue.NewMemoryQueue()
+		memQueue := queue.NewMemoryQueue()
+		queueProducer = memQueue
+		queueConsumer = memQueue
 		creditsRepo = credits.NewPostgresRepository(pgClient.Pool)
 		telemetryRepo = telemetry.NewPostgresRepository(pgClient.Pool)
 		checkpointStore = wal.NewPostgresCheckpointStore(pgClient.Pool)
@@ -162,7 +166,9 @@ func main() {
 		memLedger = ledger.NewMemoryRepository()
 		ledgerRepo = memLedger
 		outboxRepo = outbox.NewMemoryRepository()
-		queueProducer = queue.NewMemoryQueue()
+		memQueue := queue.NewMemoryQueue()
+		queueProducer = memQueue
+		queueConsumer = memQueue
 		creditsRepo = credits.NewMemoryRepository()
 		telemetryRepo = telemetry.NewMemoryRepository()
 		checkpointStore = wal.NewMemoryCheckpointStore()
@@ -211,6 +217,15 @@ func main() {
 	// Transactional Outbox Relay
 	outboxRelay := outbox.NewRelay(outboxRepo, queueProducer)
 	outboxRelay.StartBackgroundRelay(ctx, 2*time.Second, 50)
+
+	// KachraSeth AI Triage Agent & Citizen Asynchronous Workflow
+	aiToolRegistry := ai.NewToolRegistry(incidentsService, hubsService, creditsService)
+	aiEngine := ai.NewRuleBasedEngine(aiToolRegistry)
+	aiIntakeStore := ai.NewMemoryIntakeStore()
+	aiIntakeService := ai.NewIntakeService(aiIntakeStore, aiToolRegistry, queueProducer)
+	aiIntakeService.StartBackgroundWorker(ctx, queueConsumer)
+	aiHandler := ai.NewHandler(aiEngine, aiIntakeService, aiToolRegistry)
+	aiHandler.RegisterRoutes(mux)
 
 	// Segmented Write-Ahead Log (WAL) & Telemetry Ingestion Engine
 	walDir := "./data/wal"

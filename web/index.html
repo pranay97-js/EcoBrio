@@ -1640,36 +1640,94 @@ window.addEventListener('resize', () => {
       onCategoryFilterChange(sel.value);
     }
 
-    // Universal AI prompt simulation
+    // Universal AI prompt simulation & real-time async dispatch
     function simulateUniversalPrompt(promptText, classification) {
       const input = document.getElementById('ai-chat-input');
       input.value = promptText;
       handleUniversalChatSubmit(classification);
     }
 
-    function handleUniversalChatSubmit(customTag) {
+    async function handleUniversalChatSubmit(customTag) {
       const input = document.getElementById('ai-chat-input');
       const text = input.value.trim();
       if (!text) return;
 
       const userBubble = document.getElementById('chat-user-message');
       userBubble.textContent = text;
-
-      if (text.toLowerCase().includes('restaurant') || text.toLowerCase().includes('compost')) {
-        document.getElementById('ai-stream-a').textContent = "Commercial Food Waste (Bulk)";
-        document.getElementById('ai-stream-b').textContent = "Wet Organic Fraction";
-        document.getElementById('ai-confidence-badge').textContent = "99.1% Match";
-      } else if (text.toLowerCase().includes('battery') || text.toLowerCase().includes('wire') || text.toLowerCase().includes('electronic')) {
-        document.getElementById('ai-stream-a').textContent = "Class 9 Lithium Cell";
-        document.getElementById('ai-stream-b').textContent = "Copper Scrap / High Purity";
-        document.getElementById('ai-confidence-badge').textContent = "97.8% Match";
-      } else {
-        document.getElementById('ai-stream-a').textContent = "Yard Trimmings (Biowaste)";
-        document.getElementById('ai-stream-b').textContent = "Enamel Paint Cans (Volatile)";
-        document.getElementById('ai-confidence-badge').textContent = "98.4% Match";
-      }
-
       input.value = '';
+
+      const badge = document.getElementById('ai-confidence-badge');
+      const streamA = document.getElementById('ai-stream-a');
+      const streamB = document.getElementById('ai-stream-b');
+      badge.textContent = "Processing async...";
+      badge.className = "px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-label-sm font-semibold animate-pulse";
+      streamA.textContent = "Queued in citizen intake";
+      streamB.textContent = "Awaiting verification worker";
+
+      try {
+        // Attempt async incident intake
+        const resp = await fetch('/api/v1/triage/async', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text,
+            coordinates: [28.6139, 77.2090]
+          })
+        });
+
+        if (resp.status === 202) {
+          const asyncData = await resp.json();
+          badge.textContent = `Status: ${asyncData.status}`;
+          streamA.textContent = `Extracted: ${asyncData.stream} (${asyncData.severity})`;
+          streamB.textContent = `Intake #${asyncData.intake_id.slice(0, 8)} in worker queue`;
+
+          // Poll intake status until incident is created
+          const intakeId = asyncData.intake_id;
+          const pollInterval = setInterval(async () => {
+            try {
+              const pollResp = await fetch(`/api/v1/triage/intake/${intakeId}`);
+              if (pollResp.ok) {
+                const intake = await pollResp.json();
+                if (intake.status === 'INCIDENT_CREATED') {
+                  clearInterval(pollInterval);
+                  badge.textContent = "99.4% Validated & Logged";
+                  badge.className = "px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-label-sm font-semibold";
+                  streamA.textContent = `Verified: ${intake.extracted_stream} (${intake.extracted_severity})`;
+                  streamB.textContent = `Incident #${intake.incident_id.slice(0, 8)} live on map`;
+                } else if (intake.status === 'FAILED') {
+                  clearInterval(pollInterval);
+                  badge.textContent = "Triage Failed";
+                  badge.className = "px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono text-label-sm font-semibold";
+                  streamB.textContent = intake.failure_reason || "Error during classification";
+                }
+              }
+            } catch (pollErr) {
+              clearInterval(pollInterval);
+            }
+          }, 350);
+
+          setTimeout(() => clearInterval(pollInterval), 8000);
+
+        } else {
+          // If not accepted as incident, query sync triage (credits query, hub search, or clarification)
+          const syncResp = await fetch('/api/v1/triage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, coordinates: [28.6139, 77.2090] })
+          });
+          if (syncResp.ok) {
+            const data = await syncResp.json();
+            badge.textContent = data.action_taken;
+            badge.className = "px-2 py-0.5 rounded bg-primary/20 text-primary font-mono text-label-sm font-semibold";
+            streamA.textContent = data.tool_name || data.action_taken;
+            streamB.textContent = data.message;
+          }
+        }
+      } catch (e) {
+        console.error("AI triage error:", e);
+        badge.textContent = "Offline Mode";
+        streamA.textContent = "Local fallback active";
+      }
     }
 
     // Perk Redemption Toast Simulation
@@ -1986,10 +2044,17 @@ window.addEventListener('resize', () => {
       }
     }
 
-    // Initialize map and WebSocket client on page load
+    // Initialize map, WebSocket client, and chat listener on page load
     window.addEventListener('DOMContentLoaded', () => {
       initIncidentMap();
       connectWebSocket();
+
+      const chatInput = document.getElementById('ai-chat-input');
+      if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handleUniversalChatSubmit();
+        });
+      }
     });
   </script>
 </div></main><footer class="w-full bg-surface-container-lowest text-on-surface-variant border-t border-surface-container-highest/40 shadow-[0_-1px_16px_rgba(0,0,0,0.5)]"><div class="max-w-7xl mx-auto px-6 lg:px-12 py-space-xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg pb-space-lg"><div class="lg:col-span-2 flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(66,229,177,0.2)]"><span class="material-symbols-outlined text-[22px]">recycling</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">EcoBrio</span><span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Universal Circular Operating System</span></div></div><p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Autonomous circular intelligence for every municipal and commercial waste stream. Unifying organics, polymers, metals, glass, paper, and tech minerals into real-time closed loops.</p><div class="flex items-center gap-space-xs text-primary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px]">all_inclusive</span><span>Continuous Multi-Stream Circulation Verified</span></div></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Universal Streams</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-emerald-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Organic &amp; Compost</a><a class="hover:text-cyan-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Polymers &amp; Plastics</a><a class="hover:text-lime-300 transition-colors" data-path="universal-streams" href="#streams-matrix">Metals &amp; Heavy Alloys</a><a class="hover:text-sky-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Glass &amp; High Silica</a><a class="hover:text-amber-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Paper &amp; Recovered Pulp</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Municipal Tools</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" data-path="collection-hubs" href="#hub-explorer">Multi-Bin Smart Hubs</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Sub-Second Incident Feed</a><a class="hover:text-primary transition-colors" data-path="green-rewards" href="#rewards-section">EcoToken Public Ledger</a><a class="hover:text-primary transition-colors" data-path="how-it-works" href="#how-it-works">Contactless Slot Access</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Autonomous Fleet Dispatch</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Standards &amp; API</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" href="#">OpenTelemetry Collector</a><a class="hover:text-primary transition-colors" href="#">ISO 14001 Audit Reports</a><a class="hover:text-primary transition-colors" href="#">PostGIS Spatial Specs</a><a class="hover:text-primary transition-colors" href="#">Zero Gas Payout Engine</a><a class="hover:text-primary transition-colors" href="#">Municipal SLA Guidelines</a></nav></div></div><div class="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md bg-surface-container/30 border border-outline-variant/20 px-6 py-4 rounded-xl"><div class="flex items-center gap-space-sm"><span class="font-body-sm text-body-sm text-on-surface-variant">© 2025 EcoBrio Universal Network Inc. All circular stream recovery protocols verified.</span></div><div class="flex items-center gap-space-sm text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">eco</span><span class="italic text-on-surface font-medium">“Every material in motion. Zero waste left behind.”</span></div></div></div></footer></body></html>

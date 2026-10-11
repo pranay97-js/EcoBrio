@@ -13,6 +13,7 @@ var (
 	ErrConflict          = errors.New("resource conflict")
 	ErrInvalidInput      = errors.New("invalid input")
 	ErrInvalidTransition = errors.New("invalid state transition")
+	ErrUnauthorized      = errors.New("unauthorized access")
 )
 
 // ErrorResponse standardizes error payloads
