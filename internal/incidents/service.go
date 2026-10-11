@@ -7,16 +7,36 @@ import (
 	"time"
 
 	"ecobrio/internal/api"
+	"ecobrio/internal/geospatial"
 	"ecobrio/internal/hubs"
+	"ecobrio/internal/websocket"
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	repo Repository
+// Broadcaster decouples real-time WebSocket fan-out from the incident service
+type Broadcaster interface {
+	Broadcast(eventType string, payload any) *websocket.Event
+	CurrentSequence() uint64
 }
 
-func NewService(repo Repository) *Service {
-	return &Service{repo: repo}
+type Service struct {
+	repo        Repository
+	geoIndexer  geospatial.Indexer
+	broadcaster Broadcaster
+}
+
+// NewService creates a new incident service with optional spatial index and WebSocket broadcaster
+func NewService(repo Repository, optional ...any) *Service {
+	svc := &Service{repo: repo}
+	for _, opt := range optional {
+		switch v := opt.(type) {
+		case geospatial.Indexer:
+			svc.geoIndexer = v
+		case Broadcaster:
+			svc.broadcaster = v
+		}
+	}
+	return svc
 }
 
 func (s *Service) ReportIncident(ctx context.Context, req CreateIncidentRequest) (*Incident, error) {
@@ -60,6 +80,24 @@ func (s *Service) ReportIncident(ctx context.Context, req CreateIncidentRequest)
 	if err := s.repo.Create(ctx, inc); err != nil {
 		return nil, err
 	}
+
+	// 1. Maintain Redis/Memory Geospatial Projection
+	if s.geoIndexer != nil {
+		_ = s.geoIndexer.IndexIncident(ctx, geospatial.GeoPoint{
+			ID:         inc.ID,
+			Latitude:   inc.Latitude,
+			Longitude:  inc.Longitude,
+			Name:       inc.Description,
+			Status:     inc.Status,
+			StreamType: inc.StreamType,
+		})
+	}
+
+	// 2. Broadcast committed transition via WebSocket Hub
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(websocket.EventIncidentCreated, inc)
+	}
+
 	return inc, nil
 }
 
@@ -96,7 +134,122 @@ func (s *Service) UpdateStatus(ctx context.Context, id uuid.UUID, targetStatus s
 	if err := s.repo.Update(ctx, inc); err != nil {
 		return nil, err
 	}
+
+	// 1. Maintain Geospatial Projection
+	if s.geoIndexer != nil {
+		if inc.Status == StatusResolved || inc.Status == StatusDismissed {
+			// Resolved items are removed from active spatial index
+			_ = s.geoIndexer.Remove(ctx, inc.ID)
+		} else {
+			_ = s.geoIndexer.IndexIncident(ctx, geospatial.GeoPoint{
+				ID:         inc.ID,
+				Latitude:   inc.Latitude,
+				Longitude:  inc.Longitude,
+				Name:       inc.Description,
+				Status:     inc.Status,
+				StreamType: inc.StreamType,
+			})
+		}
+	}
+
+	// 2. Broadcast committed transition via WebSocket Hub
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(websocket.EventIncidentUpdated, inc)
+	}
+
 	return inc, nil
+}
+
+// NearbyIncidents finds active incidents within the given radius in kilometers
+func (s *Service) NearbyIncidents(ctx context.Context, lat, lon, radiusKm float64, limit int) ([]Incident, error) {
+	if s.geoIndexer != nil {
+		points, err := s.geoIndexer.SearchNearby(ctx, lat, lon, radiusKm, limit)
+		if err == nil && len(points) > 0 {
+			results := make([]Incident, 0, len(points))
+			for _, p := range points {
+				inc, err := s.repo.GetByID(ctx, p.ID)
+				if err == nil && inc != nil {
+					results = append(results, *inc)
+				}
+			}
+			return results, nil
+		}
+	}
+
+	// Fallback to repository filtering with manual distance calculation
+	all, err := s.repo.List(ctx, Filter{})
+	if err != nil {
+		return nil, err
+	}
+
+	var matched []Incident
+	for _, inc := range all {
+		if inc.Status == StatusResolved || inc.Status == StatusDismissed {
+			continue
+		}
+		dist := geospatial.HaversineKm(lat, lon, inc.Latitude, inc.Longitude)
+		if dist <= radiusKm {
+			matched = append(matched, inc)
+			if limit > 0 && len(matched) >= limit {
+				break
+			}
+		}
+	}
+	return matched, nil
+}
+
+// GetActiveSnapshot returns all non-terminal incidents along with the current broadcast sequence
+// Used by the WebSocket Hub to provide snapshot synchronization on reconnect
+func (s *Service) GetActiveSnapshot(ctx context.Context) (any, uint64, error) {
+	all, err := s.repo.List(ctx, Filter{})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	active := make([]Incident, 0, len(all))
+	for _, inc := range all {
+		if inc.Status != StatusResolved && inc.Status != StatusDismissed {
+			active = append(active, inc)
+		}
+	}
+
+	var seq uint64 = 0
+	if s.broadcaster != nil {
+		seq = s.broadcaster.CurrentSequence()
+	}
+
+	return active, seq, nil
+}
+
+// RebuildGeoIndex repopulates the spatial index from the canonical database
+func (s *Service) RebuildGeoIndex(ctx context.Context) (int, error) {
+	if s.geoIndexer == nil {
+		return 0, nil
+	}
+
+	all, err := s.repo.List(ctx, Filter{})
+	if err != nil {
+		return 0, err
+	}
+
+	points := make([]geospatial.GeoPoint, 0, len(all))
+	for _, inc := range all {
+		if inc.Status != StatusResolved && inc.Status != StatusDismissed {
+			points = append(points, geospatial.GeoPoint{
+				ID:         inc.ID,
+				Latitude:   inc.Latitude,
+				Longitude:  inc.Longitude,
+				Name:       inc.Description,
+				Status:     inc.Status,
+				StreamType: inc.StreamType,
+			})
+		}
+	}
+
+	if err := s.geoIndexer.RebuildIndex(ctx, points); err != nil {
+		return 0, err
+	}
+	return len(points), nil
 }
 
 func isValidTransition(current, target string) bool {

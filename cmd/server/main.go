@@ -16,6 +16,7 @@ import (
 	"ecobrio/internal/config"
 	"ecobrio/internal/credits"
 	"ecobrio/internal/database"
+	"ecobrio/internal/geospatial"
 	"ecobrio/internal/hubs"
 	"ecobrio/internal/incidents"
 	"ecobrio/internal/ledger"
@@ -26,6 +27,7 @@ import (
 	"ecobrio/internal/telemetry"
 	"ecobrio/internal/telemetry/snapshots"
 	"ecobrio/internal/telemetry/wal"
+	"ecobrio/internal/websocket"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -166,11 +168,30 @@ func main() {
 		checkpointStore = wal.NewMemoryCheckpointStore()
 	}
 
+	// Geospatial Indexer & Native Go WebSocket Hub
+	var geoIndexer geospatial.Indexer
+	if redisClient != nil {
+		geoIndexer = geospatial.NewRedisIndexer(redisClient.Client)
+	} else {
+		geoIndexer = geospatial.NewMemoryIndexer()
+	}
+
+	wsHub := websocket.NewHub()
+	go wsHub.Run(ctx)
+	wsHub.RegisterRoutes(mux)
+
 	hubsService := hubs.NewService(hubsRepo)
 	hubsHandler := hubs.NewHandler(hubsService)
 	hubsHandler.RegisterRoutes(mux)
 
-	incidentsService := incidents.NewService(incidentsRepo)
+	incidentsService := incidents.NewService(incidentsRepo, geoIndexer, wsHub)
+	wsHub.SetSnapshotProvider(incidentsService.GetActiveSnapshot)
+
+	// Rebuild / Reconcile Redis GEO projection from canonical DB on boot
+	if reindexed, err := incidentsService.RebuildGeoIndex(ctx); err == nil && reindexed > 0 {
+		slog.Info("Geospatial incident projection synchronized on boot", "indexed_count", reindexed)
+	}
+
 	incidentsHandler := incidents.NewHandler(incidentsService)
 	incidentsHandler.RegisterRoutes(mux)
 

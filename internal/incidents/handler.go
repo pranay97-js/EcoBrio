@@ -22,6 +22,9 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/incidents", h.handleCreateIncident)
 	mux.HandleFunc("GET /api/v1/incidents", h.handleListIncidents)
+	mux.HandleFunc("GET /api/v1/incidents/nearby", h.handleNearbyIncidents)
+	mux.HandleFunc("GET /api/v1/incidents/snapshot", h.handleGetSnapshot)
+	mux.HandleFunc("POST /api/v1/incidents/reindex", h.handleRebuildIndex)
 	mux.HandleFunc("GET /api/v1/incidents/{id}", h.handleGetIncident)
 	mux.HandleFunc("PATCH /api/v1/incidents/{id}/status", h.handleUpdateStatus)
 }
@@ -66,6 +69,67 @@ func (h *Handler) handleListIncidents(w http.ResponseWriter, r *http.Request) {
 		incidentsList = []Incident{}
 	}
 	api.WriteJSON(w, http.StatusOK, incidentsList)
+}
+
+func (h *Handler) handleNearbyIncidents(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	lat, err := strconv.ParseFloat(q.Get("lat"), 64)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, "INVALID_PARAM", "Query param 'lat' is required and must be numeric")
+		return
+	}
+	lon, err := strconv.ParseFloat(q.Get("lon"), 64)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, "INVALID_PARAM", "Query param 'lon' is required and must be numeric")
+		return
+	}
+
+	radiusKm, _ := strconv.ParseFloat(q.Get("radius"), 64)
+	if radiusKm <= 0 {
+		radiusKm = 10.0 // Default 10km radius
+	}
+
+	limit, _ := strconv.Atoi(q.Get("limit"))
+	if limit <= 0 {
+		limit = 50
+	}
+
+	nearby, err := h.service.NearbyIncidents(r.Context(), lat, lon, radiusKm, limit)
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to query nearby incidents")
+		return
+	}
+
+	if nearby == nil {
+		nearby = []Incident{}
+	}
+	api.WriteJSON(w, http.StatusOK, nearby)
+}
+
+func (h *Handler) handleGetSnapshot(w http.ResponseWriter, r *http.Request) {
+	state, seq, err := h.service.GetActiveSnapshot(r.Context())
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to capture active incident snapshot")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusOK, map[string]any{
+		"sequence": seq,
+		"snapshot": state,
+	})
+}
+
+func (h *Handler) handleRebuildIndex(w http.ResponseWriter, r *http.Request) {
+	reindexed, err := h.service.RebuildGeoIndex(r.Context())
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to rebuild geospatial index")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusOK, map[string]any{
+		"status":          "INDEX_REBUILT",
+		"reindexed_count": reindexed,
+	})
 }
 
 func (h *Handler) handleGetIncident(w http.ResponseWriter, r *http.Request) {

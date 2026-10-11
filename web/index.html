@@ -1,5 +1,5 @@
 <!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><title>EcoBrio — Autonomous Circular Intelligence for Every Waste Stream</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }
 @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(1000%); } }
 .scanline-effect { animation: scanline 8s linear infinite; }
 </style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-bright": "#2e3c38", "on-primary-fixed-variant": "#00513b", "outline-variant": "#3c4a43", "primary-fixed": "#60fcc7", "on-tertiary-container": "#1a4b3f", "surface-container": "#15221f", "on-error-container": "#ffdad6", "tertiary-fixed": "#bbeddd", "surface-container-high": "#1f2d29", "inverse-primary": "#006c50", "error": "#ffb4ab", "on-surface": "#d7e6e0", "secondary": "#aad549", "on-tertiary": "#00382d", "on-tertiary-fixed-variant": "#1e4f43", "primary-fixed-dim": "#3adfac", "secondary-fixed": "#c5f262", "background": "#091613", "surface-variant": "#2a3734", "on-error": "#690005", "on-surface-variant": "#bacac1", "on-primary-container": "#004d38", "secondary-fixed-dim": "#aad549", "on-background": "#d7e6e0", "on-secondary-fixed-variant": "#384e00", "primary-container": "#00c897", "on-tertiary-fixed": "#002019", "surface-dim": "#091613", "primary": "#42e5b1", "on-secondary-fixed": "#141f00", "surface-tint": "#3adfac", "surface-container-lowest": "#04100e", "secondary-container": "#769d0d", "on-primary-fixed": "#002116", "surface-container-highest": "#2a3734", "tertiary-container": "#89baab", "on-primary": "#003828", "surface-container-low": "#111e1b", "inverse-surface": "#d7e6e0", "tertiary": "#a4d6c6", "error-container": "#93000a", "on-secondary": "#263500", "surface": "#091613", "inverse-on-surface": "#26332f", "tertiary-fixed-dim": "#9fd1c1", "outline": "#85948c", "on-secondary-container": "#202e00" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "space-xl": "2.5rem", "gutter-lg": "2rem", "margin-mobile": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "margin": "2rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "0.75rem" }, "fontFamily": { "label-lg": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-display-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-display": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"] }, "fontSize": { "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-display-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-display": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "400" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "700" }] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 w-full z-50 bg-surface/85 backdrop-blur-xl border-b border-surface-container-highest/40 shadow-[0_1px_16px_rgba(0,0,0,0.45)]"><div class="h-20 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-gutter"><div class="flex items-center gap-space-md"><img alt="EcoBrio Brand Mark" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VAgS5jt8cUFiWjYCt9060CDu_U8fcg2BC4AMhj5xFdUfXoI24xfDT6ZKOB5tCgkCY9tX2dEEdUu4nS7eG90f1FT_U-4AL0Zkwd_aDuPs-gBf1Ad-t8Qie-jKHBe2CDOaiy2-VuZuMv1HKUE7QyILruokM4ywHD0pVDRkGhV79l6eeJHC8numKQrMfwl3tN29q7gs-7MTVhSAtlm_fuam6ZPALBj_satsfIf7d8ygZCKcFVzFRDNCt-fqMt"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">EcoBrio</span><span class="font-label-sm text-label-sm text-primary tracking-wider uppercase font-semibold leading-tight">Universal Circular Intelligence</span></div></div><nav class="hidden xl:flex items-center gap-space-lg" data-active-classes="text-primary font-semibold"><a aria-current="page" class="transition-colors text-primary font-semibold" data-path="home" href="#">Home</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="universal-streams" href="#streams-matrix">Waste Streams</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="collection-hubs" href="#hub-explorer">Collection Hubs</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="green-rewards" href="#rewards-section">Green Rewards</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="live-intelligence" href="#telemetry-section">Live Telemetry</a></nav><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center gap-space-xs px-3.5 py-1.5 rounded-full bg-surface-container-high/80 border border-primary/20 shadow-[0_0_14px_rgba(66,229,177,0.12)]"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span><span class="font-label-sm text-label-sm text-primary tracking-wide">Universal Grid Active</span></div><a class="inline-flex items-center gap-space-xs px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-container to-primary text-on-primary font-label-lg text-label-lg shadow-[0_0_20px_rgba(0,200,151,0.35)] hover:shadow-[0_0_28px_rgba(170,213,73,0.5)] hover:text-on-primary transition-all duration-200" data-path="dashboard-overview" href="#hub-explorer"><span class="material-symbols-outlined text-[18px]">bolt</span><span>Launch Dispatcher</span></a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(66,229,177,0.3)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-surface"><div class="flex flex-col w-full">
@@ -970,78 +970,100 @@ window.addEventListener('resize', () => {
 </div>
 </div>
 </div>
-<!-- Cross-Stream Incident Stream Cards -->
-<div class="p-6 rounded-2xl bg-surface-container border border-outline-variant/30 shadow-lg flex flex-col gap-4">
-<div class="flex items-center justify-between border-b border-surface-container-highest/60 pb-4">
-<div class="flex items-center gap-2">
-<span class="font-label-lg text-label-lg text-on-surface font-bold">Universal Anomaly Dispatch Log</span>
-<span class="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-mono text-label-sm font-semibold">3 Active Incidents</span>
-</div>
-<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">Stream polling: every 3.2s</span>
-</div>
-<!-- Alert 1: Bio Methane -->
-<div class="p-4 rounded-xl bg-surface-container-high border border-emerald-500/20 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-emerald-500/40 transition-colors">
-<div class="flex items-start gap-4">
-<div class="w-10 h-10 rounded-lg bg-surface-container border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-<span class="material-symbols-outlined text-[22px]">air</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-label-md text-label-md font-mono text-emerald-400 font-bold">#BIO-3910</span>
-<span class="px-2 py-0.5 rounded text-label-sm font-semibold bg-emerald-500/15 text-emerald-300">Organic Stream</span>
-<span class="text-label-sm text-on-surface-variant font-mono">6m ago</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface font-medium mt-1">Methane threshold elevation logged in Central Bio-Compost Digester</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Telemetry confirms pressure at 1.4 bar. Micro-turbine extraction valve triggered to buffer bio-gas.</p>
-</div>
-</div>
-<div class="flex items-center gap-3 shrink-0">
-<span class="px-3 py-1 rounded-full bg-surface-container text-emerald-400 font-label-sm text-label-sm font-semibold font-mono">Auto-Vented (Safe)</span>
-<button class="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-highest border border-outline-variant/30 text-on-surface font-label-sm text-label-sm font-semibold transition-colors">Inspect Stream</button>
-</div>
-</div>
-<!-- Alert 2: Polymer Contamination -->
-<div class="p-4 rounded-xl bg-surface-container-high border border-cyan-500/20 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-cyan-500/40 transition-colors">
-<div class="flex items-start gap-4">
-<div class="w-10 h-10 rounded-lg bg-surface-container border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-<span class="material-symbols-outlined text-[22px]">warning</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-label-md text-label-md font-mono text-cyan-400 font-bold">#POLY-8821</span>
-<span class="px-2 py-0.5 rounded text-label-sm font-semibold bg-cyan-500/15 text-cyan-300">Plastics Stream</span>
-<span class="text-label-sm text-on-surface-variant font-mono">22m ago</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface font-medium mt-1">Unsorted polymer contamination detected in Sector 3 clean optical stream</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Multi-spectral camera isolated PVC bladder mixed with PET bottles. Air-jet diverter engaged.</p>
-</div>
-</div>
-<div class="flex items-center gap-3 shrink-0">
-<span class="px-3 py-1 rounded-full bg-surface-container text-cyan-400 font-label-sm text-label-sm font-semibold font-mono">Diverted to Sec-B</span>
-<button class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:bg-secondary transition-colors">Review Flakes</button>
-</div>
-</div>
-<!-- Alert 3: Industrial Battery / Chemical -->
-<div class="p-4 rounded-xl bg-surface-container-high border border-purple-500/20 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-purple-500/40 transition-colors">
-<div class="flex items-start gap-4">
-<div class="w-10 h-10 rounded-lg bg-surface-container border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-<span class="material-symbols-outlined text-[22px]">dangerous</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-label-md text-label-md font-mono text-purple-400 font-bold">#HAZ-1049</span>
-<span class="px-2 py-0.5 rounded text-label-sm font-semibold bg-purple-500/15 text-purple-300">Hazardous / E-Waste</span>
-<span class="text-label-sm text-on-surface-variant font-mono">48m ago</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface font-medium mt-1">Industrial lithium battery deposit logged at Metro North without isolation container</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Thermal camera shows normal core (21°C). Sand-containment cassette mechanically locked over bin.</p>
-</div>
-</div>
-<div class="flex items-center gap-3 shrink-0">
-<span class="px-3 py-1 rounded-full bg-surface-container text-purple-400 font-label-sm text-label-sm font-semibold font-mono animate-pulse">Unit 04 In Route</span>
-<button class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-sm font-semibold hover:bg-secondary transition-colors">Dispatch Route</button>
-</div>
-</div>
+<!-- Dynamic Real-Time Incident Stream & Geospatial Tracker -->
+<div class="p-6 rounded-2xl bg-surface-container border border-outline-variant/30 shadow-lg flex flex-col gap-6">
+  <div class="flex flex-wrap items-center justify-between border-b border-surface-container-highest/60 pb-4 gap-4">
+    <div class="flex items-center gap-3">
+      <span class="font-label-lg text-label-lg text-on-surface font-bold">Universal Anomaly Dispatch &amp; Geospatial Grid</span>
+      <span id="active-incidents-badge" class="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-mono text-label-sm font-semibold">0 Active Incidents</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="ws-status-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface-variant font-mono text-label-sm shadow-sm">
+        <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span id="ws-status-text">Connecting to Hub...</span>
+      </div>
+      <button onclick="toggleReportIncidentModal()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-container to-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-md hover:shadow-lg hover:shadow-primary/25 transition-all">
+        <span class="material-symbols-outlined text-[18px]">add_alert</span>
+        <span>Report Waste Incident</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Real-Time Interactive Leaflet Map -->
+  <div class="flex flex-col gap-2">
+    <div class="flex items-center justify-between">
+      <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Live Geospatial Coordinate Map (OpenStreetMap / Leaflet)</span>
+      <span class="font-mono text-label-sm text-outline">Pan &amp; click markers for instant telemetry details</span>
+    </div>
+    <div id="incident-leaflet-map" class="w-full h-80 rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-10"></div>
+  </div>
+
+  <!-- Inline Report Incident Modal -->
+  <div id="report-incident-modal" class="hidden p-5 rounded-xl bg-surface-container-high border border-primary/30 shadow-xl flex flex-col gap-4 animate-fadeIn">
+    <div class="flex items-center justify-between border-b border-surface-container-highest/40 pb-3">
+      <span class="font-label-lg text-label-lg text-primary font-bold flex items-center gap-2">
+        <span class="material-symbols-outlined text-[20px]">report</span>
+        <span>Submit Real-Time Municipal Incident</span>
+      </span>
+      <button onclick="toggleReportIncidentModal()" class="text-on-surface-variant hover:text-on-surface">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form id="incident-report-form" onsubmit="submitIncidentForm(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="md:col-span-2 flex flex-col gap-1">
+        <label class="font-label-sm text-label-sm text-on-surface-variant">Description</label>
+        <input id="inc-desc" type="text" required placeholder="e.g. Hazardous chemical spill near collection bin" class="px-3.5 py-2 rounded-lg bg-surface-container border border-outline-variant/50 text-on-surface font-body-sm text-body-sm focus:border-primary focus:outline-none" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="font-label-sm text-label-sm text-on-surface-variant">Waste Stream</label>
+        <select id="inc-stream" class="px-3.5 py-2 rounded-lg bg-surface-container border border-outline-variant/50 text-on-surface font-body-sm text-body-sm focus:border-primary focus:outline-none">
+          <option value="HAZARDOUS">Hazardous</option>
+          <option value="ORGANIC">Organic</option>
+          <option value="PLASTICS">Plastics</option>
+          <option value="EWASTE">E-Waste</option>
+          <option value="METALS">Metals</option>
+          <option value="GLASS">Glass</option>
+          <option value="PAPER">Paper</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="font-label-sm text-label-sm text-on-surface-variant">Severity</label>
+        <select id="inc-severity" class="px-3.5 py-2 rounded-lg bg-surface-container border border-outline-variant/50 text-on-surface font-body-sm text-body-sm focus:border-primary focus:outline-none">
+          <option value="HIGH">High</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="font-label-sm text-label-sm text-on-surface-variant">Latitude</label>
+        <input id="inc-lat" type="number" step="0.0001" value="28.6139" required class="px-3.5 py-2 rounded-lg bg-surface-container border border-outline-variant/50 text-on-surface font-body-sm text-body-sm focus:border-primary focus:outline-none" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="font-label-sm text-label-sm text-on-surface-variant">Longitude</label>
+        <input id="inc-lon" type="number" step="0.0001" value="77.2090" required class="px-3.5 py-2 rounded-lg bg-surface-container border border-outline-variant/50 text-on-surface font-body-sm text-body-sm focus:border-primary focus:outline-none" />
+      </div>
+      <div class="md:col-span-2 flex items-end">
+        <button type="submit" class="w-full py-2.5 rounded-lg bg-primary hover:bg-secondary text-on-primary font-label-md font-bold transition-all shadow-md">
+          Dispatch Incident to Grid
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Dynamic Live Incidents Feed List -->
+  <div class="flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Active Incidents (Live Broadcast Feed)</span>
+      <span id="resync-status" class="font-label-sm text-label-sm text-primary font-mono">Stream Synchronized</span>
+    </div>
+    <div id="live-incidents-list" class="flex flex-col gap-3">
+      <!-- Live cards rendered by WebSocket JavaScript client -->
+      <div class="p-6 rounded-xl bg-surface-container-high/60 border border-outline-variant/20 text-center text-on-surface-variant font-body-sm">
+        Listening for WebSocket broadcast stream...
+      </div>
+    </div>
+  </div>
 </div>
 </div>
 </section>
@@ -1662,5 +1684,312 @@ window.addEventListener('resize', () => {
         alert('Insufficient EcoToken balance for this perk.');
       }
     }
+
+    // =========================================================================
+    // DAY 7: REAL-TIME WEBSOCKET HUB & LEAFLET GEOSPATIAL MAP ENGINE
+    // =========================================================================
+    let incidentMap = null;
+    let incidentMarkers = {};
+    let activeIncidents = new Map();
+    let wsConnection = null;
+    let wsLastSeq = 0;
+    let wsReconnectTimeout = null;
+    let wsReconnectAttempts = 0;
+
+    function initIncidentMap() {
+      const mapContainer = document.getElementById('incident-leaflet-map');
+      if (!mapContainer || incidentMap) return;
+
+      try {
+        incidentMap = L.map('incident-leaflet-map').setView([28.6139, 77.2090], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; CARTO | &copy; OpenStreetMap',
+          maxZoom: 19
+        }).addTo(incidentMap);
+      } catch (e) {
+        console.warn('Map initialization notice:', e);
+      }
+    }
+
+    function toggleReportIncidentModal() {
+      const modal = document.getElementById('report-incident-modal');
+      if (modal) {
+        modal.classList.toggle('hidden');
+      }
+    }
+
+    async function submitIncidentForm(e) {
+      e.preventDefault();
+      const desc = document.getElementById('inc-desc').value.trim();
+      const stream = document.getElementById('inc-stream').value;
+      const severity = document.getElementById('inc-severity').value;
+      const lat = parseFloat(document.getElementById('inc-lat').value);
+      const lon = parseFloat(document.getElementById('inc-lon').value);
+
+      if (!desc) return;
+
+      try {
+        const resp = await fetch('/api/v1/incidents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: desc,
+            stream_type: stream,
+            severity: severity,
+            latitude: lat,
+            longitude: lon
+          })
+        });
+
+        if (resp.ok) {
+          toggleReportIncidentModal();
+          document.getElementById('incident-report-form').reset();
+          document.getElementById('inc-lat').value = "28.6139";
+          document.getElementById('inc-lon').value = "77.2090";
+        } else {
+          const err = await resp.json();
+          alert('Failed to report incident: ' + (err.error?.message || resp.statusText));
+        }
+      } catch (err) {
+        alert('Network error submitting incident: ' + err.message);
+      }
+    }
+
+    async function updateIncidentStatus(id, newStatus) {
+      try {
+        const resp = await fetch(`/api/v1/incidents/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          alert('Update failed: ' + (err.error?.message || resp.statusText));
+        }
+      } catch (err) {
+        alert('Network error updating status: ' + err.message);
+      }
+    }
+
+    function getStreamColor(stream) {
+      switch ((stream || '').toUpperCase()) {
+        case 'HAZARDOUS': return '#ef4444';
+        case 'ORGANIC': return '#10b981';
+        case 'PLASTICS': return '#06b6d4';
+        case 'EWASTE': return '#a855f7';
+        case 'METALS': return '#84cc16';
+        case 'GLASS': return '#38bdf8';
+        case 'PAPER': return '#f59e0b';
+        default: return '#42e5b1';
+      }
+    }
+
+    function getStatusBadge(status) {
+      switch ((status || '').toUpperCase()) {
+        case 'RAISED':
+          return `<span class="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-mono text-label-sm font-semibold border border-red-500/30">🔴 RAISED</span>`;
+        case 'IN_PROGRESS':
+          return `<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-label-sm font-semibold border border-amber-500/30">🟡 IN-PROGRESS</span>`;
+        case 'RESOLVED':
+          return `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-label-sm font-semibold border border-emerald-500/30">🟢 RESOLVED</span>`;
+        default:
+          return `<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface font-mono text-label-sm">${status}</span>`;
+      }
+    }
+
+    function renderIncidentCards() {
+      const container = document.getElementById('live-incidents-list');
+      const badge = document.getElementById('active-incidents-badge');
+      if (!container) return;
+
+      const incidents = Array.from(activeIncidents.values());
+      if (badge) {
+        badge.textContent = `${incidents.length} Active Incident${incidents.length === 1 ? '' : 's'}`;
+      }
+
+      if (incidents.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 rounded-xl bg-surface-container-high/40 border border-outline-variant/20 text-center flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[32px]">check_circle</span>
+            <span class="text-on-surface font-semibold font-body-md">Zero Active Incidents</span>
+            <span class="text-on-surface-variant font-body-sm text-sm">All circular waste streams in this sector are clear and nominal.</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = incidents.map(inc => {
+        const streamColor = getStreamColor(inc.stream_type);
+        const statusBadge = getStatusBadge(inc.status);
+        const actionBtn = inc.status === 'RAISED'
+          ? `<button onclick="updateIncidentStatus('${inc.id}', 'IN_PROGRESS')" class="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-label-sm text-label-sm font-semibold transition-all">Claim (In-Progress)</button>`
+          : inc.status === 'IN_PROGRESS'
+          ? `<button onclick="updateIncidentStatus('${inc.id}', 'RESOLVED')" class="px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-label-sm text-label-sm font-semibold transition-all">Resolve Incident</button>`
+          : '';
+
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-high border border-outline-variant/30 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-primary/40 transition-all">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-lg bg-surface-container border flex items-center justify-center shrink-0 shadow-inner" style="border-color: ${streamColor}50; color: ${streamColor}">
+                <span class="material-symbols-outlined text-[22px]">warning</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-mono text-label-sm font-bold text-outline">#${inc.id.substring(0, 8)}</span>
+                  <span class="px-2 py-0.5 rounded text-label-sm font-semibold" style="background-color: ${streamColor}20; color: ${streamColor}">${inc.stream_type}</span>
+                  <span class="px-2 py-0.5 rounded text-label-sm font-semibold bg-surface-container text-on-surface-variant uppercase">${inc.severity}</span>
+                  ${statusBadge}
+                </div>
+                <p class="font-body-md text-body-md text-on-surface font-medium">${inc.description}</p>
+                <div class="flex items-center gap-3 text-label-sm text-on-surface-variant font-mono">
+                  <span>LAT: ${inc.latitude.toFixed(4)}° • LON: ${inc.longitude.toFixed(4)}°</span>
+                  <span>•</span>
+                  <span>${new Date(inc.created_at || Date.now()).toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0 self-end md:self-center">
+              ${actionBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function syncMapMarkers() {
+      if (!incidentMap) return;
+
+      // Remove markers that are no longer active
+      for (const [id, marker] of Object.entries(incidentMarkers)) {
+        if (!activeIncidents.has(id)) {
+          incidentMap.removeLayer(marker);
+          delete incidentMarkers[id];
+        }
+      }
+
+      // Add or update markers for active incidents
+      const bounds = [];
+      for (const inc of activeIncidents.values()) {
+        const color = inc.status === 'RAISED' ? '#ef4444' : inc.status === 'IN_PROGRESS' ? '#f59e0b' : '#10b981';
+        bounds.push([inc.latitude, inc.longitude]);
+
+        if (incidentMarkers[inc.id]) {
+          incidentMarkers[inc.id].setStyle({ color: color, fillColor: color });
+        } else {
+          const marker = L.circleMarker([inc.latitude, inc.longitude], {
+            radius: 8,
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.8,
+            weight: 2
+          }).addTo(incidentMap);
+
+          const popupContent = `
+            <div style="font-family: Inter, sans-serif; color: #111;">
+              <strong>${inc.stream_type} Incident</strong><br/>
+              <span style="font-size: 12px;">${inc.description}</span><br/>
+              <span style="font-size: 11px; font-weight: bold; color: ${color};">${inc.status}</span>
+            </div>
+          `;
+          marker.bindPopup(popupContent);
+          incidentMarkers[inc.id] = marker;
+        }
+      }
+
+      if (bounds.length > 0 && !incidentMap.hasBoundsSet) {
+        incidentMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+        incidentMap.hasBoundsSet = true;
+      }
+    }
+
+    function connectWebSocket() {
+      if (wsReconnectTimeout) {
+        clearTimeout(wsReconnectTimeout);
+        wsReconnectTimeout = null;
+      }
+
+      const statusDot = document.getElementById('ws-status-dot');
+      const statusText = document.getElementById('ws-status-text');
+
+      if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+      if (statusText) statusText.textContent = wsReconnectAttempts > 0 ? "Reconnecting..." : "Connecting...";
+
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${location.host}/ws/incidents?last_seq=${wsLastSeq}`;
+
+      try {
+        wsConnection = new WebSocket(wsUrl);
+
+        wsConnection.onopen = () => {
+          wsReconnectAttempts = 0;
+          if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]";
+          if (statusText) statusText.textContent = `WebSocket Active (Seq #${wsLastSeq})`;
+        };
+
+        wsConnection.onmessage = (e) => {
+          try {
+            const ev = JSON.parse(e.data);
+            if (ev.sequence) {
+              wsLastSeq = ev.sequence;
+              if (statusText) statusText.textContent = `WebSocket Active (Seq #${wsLastSeq})`;
+            }
+
+            if (ev.type === 'SNAPSHOT_SYNC') {
+              activeIncidents.clear();
+              const snapshotList = Array.isArray(ev.payload?.state) ? ev.payload.state : [];
+              snapshotList.forEach(inc => {
+                if (inc.status !== 'RESOLVED' && inc.status !== 'DISMISSED') {
+                  activeIncidents.set(inc.id, inc);
+                }
+              });
+              renderIncidentCards();
+              syncMapMarkers();
+            } else if (ev.type === 'INCIDENT_CREATED') {
+              const inc = ev.payload;
+              if (inc && inc.id) {
+                activeIncidents.set(inc.id, inc);
+                renderIncidentCards();
+                syncMapMarkers();
+              }
+            } else if (ev.type === 'INCIDENT_UPDATED') {
+              const inc = ev.payload;
+              if (inc && inc.id) {
+                if (inc.status === 'RESOLVED' || inc.status === 'DISMISSED') {
+                  activeIncidents.delete(inc.id);
+                } else {
+                  activeIncidents.set(inc.id, inc);
+                }
+                renderIncidentCards();
+                syncMapMarkers();
+              }
+            }
+          } catch (err) {
+            console.error('Failed to parse WebSocket event:', err);
+          }
+        };
+
+        wsConnection.onerror = (err) => {
+          console.warn('WebSocket encountered error:', err);
+        };
+
+        wsConnection.onclose = () => {
+          if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+          if (statusText) statusText.textContent = "Disconnected (Reconnecting...)";
+
+          wsReconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(1.5, wsReconnectAttempts), 10000);
+          wsReconnectTimeout = setTimeout(connectWebSocket, delay);
+        };
+      } catch (err) {
+        console.error('Failed to initiate WebSocket connection:', err);
+        wsReconnectTimeout = setTimeout(connectWebSocket, 3000);
+      }
+    }
+
+    // Initialize map and WebSocket client on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initIncidentMap();
+      connectWebSocket();
+    });
   </script>
 </div></main><footer class="w-full bg-surface-container-lowest text-on-surface-variant border-t border-surface-container-highest/40 shadow-[0_-1px_16px_rgba(0,0,0,0.5)]"><div class="max-w-7xl mx-auto px-6 lg:px-12 py-space-xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg pb-space-lg"><div class="lg:col-span-2 flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(66,229,177,0.2)]"><span class="material-symbols-outlined text-[22px]">recycling</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">EcoBrio</span><span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Universal Circular Operating System</span></div></div><p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Autonomous circular intelligence for every municipal and commercial waste stream. Unifying organics, polymers, metals, glass, paper, and tech minerals into real-time closed loops.</p><div class="flex items-center gap-space-xs text-primary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px]">all_inclusive</span><span>Continuous Multi-Stream Circulation Verified</span></div></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Universal Streams</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-emerald-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Organic &amp; Compost</a><a class="hover:text-cyan-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Polymers &amp; Plastics</a><a class="hover:text-lime-300 transition-colors" data-path="universal-streams" href="#streams-matrix">Metals &amp; Heavy Alloys</a><a class="hover:text-sky-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Glass &amp; High Silica</a><a class="hover:text-amber-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Paper &amp; Recovered Pulp</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Municipal Tools</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" data-path="collection-hubs" href="#hub-explorer">Multi-Bin Smart Hubs</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Sub-Second Incident Feed</a><a class="hover:text-primary transition-colors" data-path="green-rewards" href="#rewards-section">EcoToken Public Ledger</a><a class="hover:text-primary transition-colors" data-path="how-it-works" href="#how-it-works">Contactless Slot Access</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Autonomous Fleet Dispatch</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Standards &amp; API</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" href="#">OpenTelemetry Collector</a><a class="hover:text-primary transition-colors" href="#">ISO 14001 Audit Reports</a><a class="hover:text-primary transition-colors" href="#">PostGIS Spatial Specs</a><a class="hover:text-primary transition-colors" href="#">Zero Gas Payout Engine</a><a class="hover:text-primary transition-colors" href="#">Municipal SLA Guidelines</a></nav></div></div><div class="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md bg-surface-container/30 border border-outline-variant/20 px-6 py-4 rounded-xl"><div class="flex items-center gap-space-sm"><span class="font-body-sm text-body-sm text-on-surface-variant">© 2025 EcoBrio Universal Network Inc. All circular stream recovery protocols verified.</span></div><div class="flex items-center gap-space-sm text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">eco</span><span class="italic text-on-surface font-medium">“Every material in motion. Zero waste left behind.”</span></div></div></div></footer></body></html>
