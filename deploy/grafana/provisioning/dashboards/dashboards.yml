@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'ecobrio-dashboards'
+    orgId: 1
+    folder: 'ECOBrio System Engine'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

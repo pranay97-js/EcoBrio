@@ -9,13 +9,20 @@ import (
 
 // Metrics holds the registered Prometheus metrics for ECOBrio
 type Metrics struct {
-	RequestDuration       *prometheus.HistogramVec
-	RequestsTotal         *prometheus.CounterVec
-	BookingConflictsTotal *prometheus.CounterVec
-	IdempotencyHitsTotal  *prometheus.CounterVec
-	WALRecordsAppended    prometheus.Counter
-	WALRecordsDurable     prometheus.Counter
-	WebSocketConnections  prometheus.Gauge
+	RequestDuration            *prometheus.HistogramVec
+	RequestsTotal              *prometheus.CounterVec
+	BookingConflictsTotal      *prometheus.CounterVec
+	BookingCompensationTotal   *prometheus.CounterVec
+	IdempotencyHitsTotal       *prometheus.CounterVec
+	WALRecordsAppended         prometheus.Counter
+	WALRecordsDurable          prometheus.Counter
+	WALRecordsReplayed         *prometheus.CounterVec
+	WALCorruptionTotal         *prometheus.CounterVec
+	WebSocketConnections       prometheus.Gauge
+	WebSocketBroadcastDuration *prometheus.HistogramVec
+	QueueMessagesPending       *prometheus.GaugeVec
+	OutboxOldestPendingSeconds prometheus.Gauge
+	GeoQueryDuration           *prometheus.HistogramVec
 }
 
 var (
@@ -57,6 +64,13 @@ func NewMetricsWithRegistry(reg prometheus.Registerer) *Metrics {
 			},
 			[]string{"reason"},
 		),
+		BookingCompensationTotal: factory.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "ecobrio_booking_compensation_total",
+				Help: "Total booking compensation and release operations tracked by outcome class",
+			},
+			[]string{"outcome"},
+		),
 		IdempotencyHitsTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "ecobrio_idempotency_hits_total",
@@ -76,11 +90,54 @@ func NewMetricsWithRegistry(reg prometheus.Registerer) *Metrics {
 				Help: "Total telemetry events fsynced and acknowledged as durable",
 			},
 		),
+		WALRecordsReplayed: factory.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "ecobrio_wal_records_replayed_total",
+				Help: "Total telemetry records replayed during crash recovery",
+			},
+			[]string{"outcome"},
+		),
+		WALCorruptionTotal: factory.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "ecobrio_wal_corruption_total",
+				Help: "Integrity failures surfaced during WAL decode and validation",
+			},
+			[]string{"corruption_class"},
+		),
 		WebSocketConnections: factory.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "ecobrio_websocket_connections",
 				Help: "Number of active persistent WebSocket client connections",
 			},
+		),
+		WebSocketBroadcastDuration: factory.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "ecobrio_websocket_broadcast_duration_seconds",
+				Help:    "Publisher-to-receiver fan-out latency duration across event types",
+				Buckets: []float64{0.001, 0.003, 0.005, 0.01, 0.015, 0.025, 0.05, 0.1},
+			},
+			[]string{"event_type"},
+		),
+		QueueMessagesPending: factory.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "ecobrio_queue_messages_pending",
+				Help: "Pending backlog messages in async processing queues",
+			},
+			[]string{"queue_name"},
+		),
+		OutboxOldestPendingSeconds: factory.NewGauge(
+			prometheus.GaugeOpts{
+				Name: "ecobrio_outbox_oldest_pending_seconds",
+				Help: "Age of oldest pending transactional outbox event in seconds",
+			},
+		),
+		GeoQueryDuration: factory.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "ecobrio_geo_query_duration_seconds",
+				Help:    "Latency distributions of geospatial index queries by query type",
+				Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25},
+			},
+			[]string{"query_type"},
 		),
 	}
 }

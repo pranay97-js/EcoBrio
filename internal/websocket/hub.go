@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"ecobrio/internal/observability"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -100,6 +101,7 @@ func (h *Hub) Run(ctx context.Context) {
 			h.clients[client] = struct{}{}
 			count := len(h.clients)
 			h.mu.Unlock()
+			observability.NewMetrics().WebSocketConnections.Set(float64(count))
 			slog.Debug("WebSocket client registered", "client_id", client.ID, "total_clients", count)
 
 		case client := <-h.unregister:
@@ -110,6 +112,7 @@ func (h *Hub) Run(ctx context.Context) {
 			}
 			count := len(h.clients)
 			h.mu.Unlock()
+			observability.NewMetrics().WebSocketConnections.Set(float64(count))
 			slog.Debug("WebSocket client unregistered", "client_id", client.ID, "total_clients", count)
 		}
 	}
@@ -117,6 +120,11 @@ func (h *Hub) Run(ctx context.Context) {
 
 // Broadcast dispatches an event to all connected clients without blocking slow consumers
 func (h *Hub) Broadcast(eventType string, payload any) *Event {
+	broadcastStart := time.Now()
+	defer func() {
+		observability.NewMetrics().WebSocketBroadcastDuration.WithLabelValues(eventType).Observe(time.Since(broadcastStart).Seconds())
+	}()
+
 	seq := h.seqCounter.Add(1)
 
 	event := &Event{
