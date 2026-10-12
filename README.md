@@ -7,9 +7,9 @@
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800?style=flat&logo=grafana)](https://grafana.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **Enterprise-grade reverse-logistics, crash-resilient hardware telemetry, double-entry green incentive clearing, and sub-second geospatial incident fan-out.**
+> **Open-source reverse-logistics platform featuring high concurrency safety, crash-resilient hardware telemetry, double-entry green incentive clearing, and sub-second geospatial incident fan-out.**
 
-Built to satisfy the rigorous systems engineering standards expected by Tier-1 distributed systems teams (**Rubrik, JusPay, Booking.com**). ECOBrio guarantees verifiable correctness under extreme concurrency, crash recovery via custom segmented Write-Ahead Logging (WAL), auditable zero-sum ledgering, and sub-millisecond event streaming.
+An open-source distributed systems implementation designed with rigorous concurrency controls, crash recovery via custom segmented Write-Ahead Logging (WAL), zero-sum double-entry ledgering, and real-time event streaming.
 
 ---
 
@@ -59,9 +59,9 @@ flowchart TD
 
 ---
 
-## 2. PRD Performance Targets & Verification Matrix
+## 2. Local Benchmark & Invariant Verification Matrix
 
-All metrics are empirically verified through automated test suites and benchmarks ([BENCHMARK_REPORT.md](BENCHMARK_REPORT.md)):
+The metrics below were measured locally using synthetic Go micro-benchmarks and invariant test suites on a single development machine ([BENCHMARK_REPORT.md](BENCHMARK_REPORT.md)). They demonstrate algorithm correctness and in-process bounds:
 
 | Metric / Invariant | PRD Target Threshold | Empirically Measured Result | Status | Verification Protocol |
 |---|---|---|:---:|---|
