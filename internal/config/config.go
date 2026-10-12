@@ -57,12 +57,12 @@ type WALConfig struct {
 }
 
 type AIConfig struct {
-	Provider        string
+	Provider         string
 	OpenRouterAPIKey string
-	OpenAIAPIKey    string
-	GeminiAPIKey    string
-	GroqAPIKey      string
-	Model           string
+	OpenAIAPIKey     string
+	GeminiAPIKey     string
+	GroqAPIKey       string
+	Model            string
 }
 
 type MapsConfig struct {
