@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type Config struct {
 	AWS      AWSConfig
 	WAL      WALConfig
 	AI       AIConfig
+	Maps     MapsConfig
 }
 
 type ServerConfig struct {
@@ -55,13 +57,45 @@ type WALConfig struct {
 }
 
 type AIConfig struct {
-	Provider     string
-	GeminiAPIKey string
-	GroqAPIKey   string
+	Provider        string
+	OpenRouterAPIKey string
+	OpenAIAPIKey    string
+	GeminiAPIKey    string
+	GroqAPIKey      string
+	Model           string
 }
 
-// Load reads configuration from environment variables with sensible defaults
+type MapsConfig struct {
+	GoogleMapsAPIKey string
+}
+
+// loadDotEnv parses a local .env file if present, populating environment variables without overriding existing values
+func loadDotEnv(filepath string) {
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			k := strings.TrimSpace(parts[0])
+			v := strings.TrimSpace(parts[1])
+			if _, exists := os.LookupEnv(k); !exists && k != "" {
+				os.Setenv(k, v)
+			}
+		}
+	}
+}
+
+// Load reads application configuration from environment variables (or .env if present) with sensible defaults
 func Load() *Config {
+	loadDotEnv(".env")
+
 	return &Config{
 		Server: ServerConfig{
 			Port:         getEnv("PORT", "8080"),
@@ -97,9 +131,15 @@ func Load() *Config {
 			BatchMaxSize:    getEnvAsInt("WAL_BATCH_MAX_SIZE", 50),
 		},
 		AI: AIConfig{
-			Provider:     getEnv("AI_PROVIDER", "mock"),
-			GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
-			GroqAPIKey:   getEnv("GROQ_API_KEY", ""),
+			Provider:         getEnv("AI_PROVIDER", "openrouter"),
+			OpenRouterAPIKey: getEnv("OPENROUTER_API_KEY", ""),
+			OpenAIAPIKey:     getEnv("OPENAI_API_KEY", ""),
+			GeminiAPIKey:     getEnv("GEMINI_API_KEY", ""),
+			GroqAPIKey:       getEnv("GROQ_API_KEY", ""),
+			Model:            getEnv("AI_MODEL", "openai/gpt-4o-mini"),
+		},
+		Maps: MapsConfig{
+			GoogleMapsAPIKey: getEnv("GOOGLE_MAPS_API_KEY", ""),
 		},
 	}
 }

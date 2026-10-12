@@ -22,6 +22,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/bookings", h.handleCreateBooking)
 	mux.HandleFunc("GET /api/v1/bookings/{id}", h.handleGetBooking)
 	mux.HandleFunc("GET /api/v1/bookings/by-request/{key}", h.handleGetBookingByRequestKey)
+	mux.HandleFunc("POST /api/v1/pickups", h.handleCreatePickup)
+	mux.HandleFunc("GET /api/v1/pickups", h.handleListPickups)
+	mux.HandleFunc("DELETE /api/v1/pickups/{id}", h.handleCancelPickup)
 }
 
 func (h *Handler) handleCreateBooking(w http.ResponseWriter, r *http.Request) {
@@ -97,4 +100,56 @@ func (h *Handler) handleGetBookingByRequestKey(w http.ResponseWriter, r *http.Re
 	}
 
 	api.WriteJSON(w, http.StatusOK, booking)
+}
+
+func (h *Handler) handleCreatePickup(w http.ResponseWriter, r *http.Request) {
+	var req PickupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Failed to parse pickup request")
+		return
+	}
+	if req.CitizenName == "" {
+		req.CitizenName = "Elena Vance"
+	}
+	if req.Address == "" {
+		req.Address = "Central London District"
+	}
+	if req.StreamType == "" {
+		req.StreamType = "PLASTICS"
+	}
+	if req.PickupTimeSlot == "" {
+		req.PickupTimeSlot = "14:00 - 14:30"
+	}
+
+	pickup, err := h.service.CreatePickup(r.Context(), &req)
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to create pickup request")
+		return
+	}
+
+	api.WriteJSON(w, http.StatusCreated, pickup)
+}
+
+func (h *Handler) handleListPickups(w http.ResponseWriter, r *http.Request) {
+	pickups, err := h.service.ListPickups(r.Context())
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to list pickups")
+		return
+	}
+	api.WriteJSON(w, http.StatusOK, pickups)
+}
+
+func (h *Handler) handleCancelPickup(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, "INVALID_UUID", "Provided pickup ID is not a valid UUID")
+		return
+	}
+
+	if err := h.service.CancelPickup(r.Context(), id); err != nil {
+		api.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Pickup request not found")
+		return
+	}
+	api.WriteJSON(w, http.StatusOK, map[string]string{"status": "CANCELLED"})
 }

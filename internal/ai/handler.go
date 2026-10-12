@@ -23,12 +23,13 @@ func NewHandler(engine Engine, intakeService *IntakeService, tools *ToolRegistry
 	}
 }
 
-// RegisterRoutes mounts AI triage and tool endpoints
+// RegisterRoutes mounts AI triage, chat, and tool endpoints
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/triage", h.handleSyncTriage)
 	mux.HandleFunc("POST /api/v1/triage/async", h.handleAsyncIntake)
 	mux.HandleFunc("GET /api/v1/triage/intake/{id}", h.handleGetIntakeStatus)
 	mux.HandleFunc("POST /api/v1/ai/tools/{toolName}", h.handleDirectToolExecution)
+	mux.HandleFunc("POST /api/v1/ai/chat", h.handleChat)
 }
 
 type TriageAPIRequest struct {
@@ -157,4 +158,37 @@ func (h *Handler) resolveSession(req TriageAPIRequest) SessionContext {
 		CitizenRole:        "CITIZEN",
 		DefaultCoordinates: req.Coordinates,
 	}
+}
+
+func (h *Handler) handleChat(w http.ResponseWriter, r *http.Request) {
+	var req TriageAPIRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Failed to decode chat request")
+		return
+	}
+
+	session := h.resolveSession(req)
+	if orEngine, ok := h.engine.(*OpenRouterEngine); ok {
+		chatRes, err := orEngine.Chat(r.Context(), session, req.Text)
+		if err != nil {
+			api.WriteError(w, http.StatusInternalServerError, "CHAT_FAILED", err.Error())
+			return
+		}
+		api.WriteJSON(w, http.StatusOK, chatRes)
+		return
+	}
+
+	res, err := h.engine.ProcessPrompt(r.Context(), session, req.Text)
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "CHAT_FAILED", err.Error())
+		return
+	}
+	api.WriteJSON(w, http.StatusOK, ChatResponse{
+		Message:           res.Message,
+		ActionTaken:       res.ActionTaken,
+		ExtractedStream:   res.ExtractedStream,
+		ExtractedSeverity: res.ExtractedSeverity,
+		ToolName:          res.ToolName,
+		IncidentID:        res.IncidentID,
+	})
 }

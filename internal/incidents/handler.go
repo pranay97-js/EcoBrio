@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"ecobrio/internal/api"
 	"github.com/google/uuid"
@@ -154,6 +155,13 @@ func (h *Handler) handleGetIncident(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	// RBAC Enforcement: Only municipal administrators have permission to update or resolve incidents
+	userRole := strings.ToUpper(strings.TrimSpace(r.Header.Get("X-User-Role")))
+	if userRole != "" && userRole != "ADMIN" {
+		api.WriteError(w, http.StatusForbidden, "FORBIDDEN", "Only Municipal Administrators have permission to modify incident state")
+		return
+	}
+
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {

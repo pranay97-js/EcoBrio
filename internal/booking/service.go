@@ -14,16 +14,18 @@ import (
 )
 
 type Service struct {
-	repo       Repository
-	tokenStore TokenStore
-	leaseTTL   time.Duration
+	repo        Repository
+	tokenStore  TokenStore
+	pickupStore *MemoryPickupStore
+	leaseTTL    time.Duration
 }
 
 func NewService(repo Repository, tokenStore TokenStore) *Service {
 	return &Service{
-		repo:       repo,
-		tokenStore: tokenStore,
-		leaseTTL:   30 * time.Second,
+		repo:        repo,
+		tokenStore:  tokenStore,
+		pickupStore: NewMemoryPickupStore(),
+		leaseTTL:    30 * time.Second,
 	}
 }
 
@@ -121,4 +123,53 @@ func (s *Service) GetBooking(ctx context.Context, id uuid.UUID) (*Booking, error
 
 func (s *Service) GetBookingByRequestKey(ctx context.Context, key string) (*Booking, error) {
 	return s.repo.GetBookingByIdempotencyKey(ctx, key)
+}
+
+func (s *Service) CreatePickup(ctx context.Context, p *PickupRequest) (*PickupRequest, error) {
+	if p.ID == uuid.Nil {
+		p.ID = uuid.New()
+	}
+	if p.CitizenID == uuid.Nil {
+		p.CitizenID = uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	}
+	if p.Status == "" {
+		p.Status = "SCHEDULED"
+	}
+	if p.TokenBounty == 0 {
+		// Calculate token bounty based on stream and weight
+		rate := int64(20)
+		switch strings.ToUpper(p.StreamType) {
+		case "EWASTE":
+			rate = 45
+		case "PLASTICS":
+			rate = 25
+		case "ORGANIC":
+			rate = 15
+		case "METALS":
+			rate = 35
+		case "GLASS":
+			rate = 18
+		case "PAPER":
+			rate = 20
+		}
+		p.TokenBounty = int64(p.EstimatedWeightKg * float64(rate))
+		if p.TokenBounty < 50 {
+			p.TokenBounty = 50
+		}
+	}
+	p.CreatedAt = time.Now()
+	p.UpdatedAt = time.Now()
+
+	if err := s.pickupStore.CreatePickup(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (s *Service) ListPickups(ctx context.Context) ([]*PickupRequest, error) {
+	return s.pickupStore.ListPickups(ctx)
+}
+
+func (s *Service) CancelPickup(ctx context.Context, id uuid.UUID) error {
+	return s.pickupStore.CancelPickup(ctx, id)
 }

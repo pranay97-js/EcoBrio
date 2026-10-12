@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"ecobrio/internal/ai"
+	"ecobrio/internal/api"
 	"ecobrio/internal/booking"
 	"ecobrio/internal/config"
 	"ecobrio/internal/credits"
@@ -241,12 +242,20 @@ func main() {
 
 	// KachraSeth AI Triage Agent & Citizen Asynchronous Workflow
 	aiToolRegistry := ai.NewToolRegistry(incidentsService, hubsService, creditsService)
-	aiEngine := ai.NewRuleBasedEngine(aiToolRegistry)
+	ruleBasedEngine := ai.NewRuleBasedEngine(aiToolRegistry)
+	aiEngine := ai.NewOpenRouterEngine(cfg.AI.OpenRouterAPIKey, cfg.AI.Model, aiToolRegistry, ruleBasedEngine)
 	aiIntakeStore := ai.NewMemoryIntakeStore()
 	aiIntakeService := ai.NewIntakeService(aiIntakeStore, aiToolRegistry, queueProducer)
 	aiIntakeService.StartBackgroundWorker(ctx, queueConsumer)
 	aiHandler := ai.NewHandler(aiEngine, aiIntakeService, aiToolRegistry)
 	aiHandler.RegisterRoutes(mux)
+
+	// Public Google Maps Configuration Endpoint
+	mux.HandleFunc("GET /api/v1/config/maps", func(w http.ResponseWriter, r *http.Request) {
+		api.WriteJSON(w, http.StatusOK, map[string]string{
+			"google_maps_api_key": cfg.Maps.GoogleMapsAPIKey,
+		})
+	})
 
 	// Segmented Write-Ahead Log (WAL) & Telemetry Ingestion Engine
 	walDir := "./data/wal"
@@ -342,12 +351,25 @@ func seedMemoryHubs(repo *hubs.MemoryRepository) {
 	hubAlphaID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	_ = repo.CreateHub(ctx, &hubs.Hub{
 		ID:             hubAlphaID,
-		Name:           "Central Metro Terminal Alpha",
-		Address:        "Platform 4, Transit Boulevard, SW1A 1AA",
-		Latitude:       51.5074,
-		Longitude:      -0.1278,
+		Name:           "Connaught Place Green Hub Alpha",
+		Address:        "Near Rajiv Chowk Metro Gate 7, Connaught Place, New Delhi, 110001",
+		Latitude:       28.6315,
+		Longitude:      77.2167,
 		Status:         "ACTIVE",
 		OperatingHours: "06:00 - 22:00 Daily",
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	})
+
+	hubBetaID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+	_ = repo.CreateHub(ctx, &hubs.Hub{
+		ID:             hubBetaID,
+		Name:           "Koramangala Eco Hub Beta",
+		Address:        "80 Feet Road, 4th Block, Koramangala, Bengaluru, 560034",
+		Latitude:       12.9352,
+		Longitude:      77.6245,
+		Status:         "ACTIVE",
+		OperatingHours: "07:00 - 21:00 Daily",
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	})
@@ -392,10 +414,10 @@ func seedMemoryLedger(repo *ledger.MemoryRepository, svc *ledger.Service) {
 	citizenID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	code := fmt.Sprintf("CITIZEN_WALLET:%s", citizenID.String())
 	_, _ = repo.GetOrCreateAccount(ctx, code, ledger.AccountLiability, &citizenID)
-	// Seed demo balance of 500 points for Elena Vance
+	// Seed demo balance of 500 points for Citizen Wallet
 	_, _ = svc.PostBalancedTransaction(ctx, ledger.PostTransactionRequest{
 		IdempotencyKey: "seed-demo-citizen-grant",
-		Description:    "Welcome Grant for Elena Vance",
+		Description:    "Welcome Eco-Credit Grant for Citizen Wallet",
 		Postings: []ledger.PostingDraft{
 			{AccountCode: "SYSTEM_ISSUANCE_RESERVE", Points: 500, IsCredit: false},
 			{AccountCode: code, Points: 500, IsCredit: true},
@@ -405,37 +427,57 @@ func seedMemoryLedger(repo *ledger.MemoryRepository, svc *ledger.Service) {
 
 func seedMemoryIncidents(repo *incidents.MemoryRepository) {
 	ctx := context.Background()
+	exp1 := time.Now().Add(36 * time.Hour)
 	_ = repo.Create(ctx, &incidents.Incident{
-		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000001"),
-		Description: "High-density lithium battery bank overflow at Metro Transit Terminal",
-		StreamType:  "EWASTE",
-		Severity:    incidents.SeverityCritical,
-		Latitude:    28.6139,
-		Longitude:   77.2090,
-		Status:      incidents.StatusRaised,
-		CreatedAt:   time.Now().Add(-15 * time.Minute),
-		UpdatedAt:   time.Now().Add(-15 * time.Minute),
+		ID:                 uuid.MustParse("22222222-0000-0000-0000-000000000001"),
+		Description:        "High-density discarded lithium battery bank and circuit boards near transit terminal",
+		StreamType:         "EWASTE",
+		Severity:           incidents.SeverityCritical,
+		Latitude:           28.6139,
+		Longitude:          77.2090,
+		Status:             incidents.StatusRaised,
+		Place:              "New Delhi Central Transit",
+		Landmark:           "Opposite Metro Gate 3",
+		TimeObserved:       time.Now().Add(-2 * time.Hour).Format("2006-01-02 15:04"),
+		ResolutionSLA:      "1-2 days",
+		ExpectedResolution: &exp1,
+		CreatedAt:          time.Now().Add(-15 * time.Minute),
+		UpdatedAt:          time.Now().Add(-15 * time.Minute),
 	})
+
+	exp2 := time.Now().Add(24 * time.Hour)
 	_ = repo.Create(ctx, &incidents.Incident{
-		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000002"),
-		Description: "Industrial polymer packaging bales discarded along Riverside canal",
-		StreamType:  "PLASTICS",
-		Severity:    incidents.SeverityHigh,
-		Latitude:    28.6250,
-		Longitude:   77.2180,
-		Status:      incidents.StatusInProgress,
-		CreatedAt:   time.Now().Add(-45 * time.Minute),
-		UpdatedAt:   time.Now().Add(-20 * time.Minute),
+		ID:                 uuid.MustParse("22222222-0000-0000-0000-000000000002"),
+		Description:        "Industrial polymer packaging bales and unsegregated plastic sacks overflowing canal culvert",
+		StreamType:         "PLASTICS",
+		Severity:           incidents.SeverityHigh,
+		Latitude:           28.6250,
+		Longitude:          77.2180,
+		Status:             incidents.StatusInProgress,
+		Place:              "Mayur Vihar Phase 1",
+		Landmark:           "Near Culvert 4, Behind DND Expressway",
+		TimeObserved:       time.Now().Add(-4 * time.Hour).Format("2006-01-02 15:04"),
+		ResolutionSLA:      "1-2 days",
+		ExpectedResolution: &exp2,
+		CreatedAt:          time.Now().Add(-45 * time.Minute),
+		UpdatedAt:          time.Now().Add(-20 * time.Minute),
 	})
+
+	exp3 := time.Now().Add(40 * time.Hour)
 	_ = repo.Create(ctx, &incidents.Incident{
-		ID:          uuid.MustParse("22222222-0000-0000-0000-000000000003"),
-		Description: "Commercial restaurant organic bio-waste dump requiring rapid dispatch",
-		StreamType:  "ORGANIC",
-		Severity:    incidents.SeverityMedium,
-		Latitude:    28.6080,
-		Longitude:   77.1950,
-		Status:      incidents.StatusRaised,
-		CreatedAt:   time.Now().Add(-5 * time.Minute),
-		UpdatedAt:   time.Now().Add(-5 * time.Minute),
+		ID:                 uuid.MustParse("22222222-0000-0000-0000-000000000003"),
+		Description:        "Commercial food market organic wet-waste mound requiring immediate municipal collection dispatch",
+		StreamType:         "ORGANIC",
+		Severity:           incidents.SeverityMedium,
+		Latitude:           28.6080,
+		Longitude:          77.1950,
+		Status:             incidents.StatusRaised,
+		Place:              "Lajpat Nagar Central Market",
+		Landmark:           "Adjacent to Block 4 Community Centre",
+		TimeObserved:       time.Now().Add(-1 * time.Hour).Format("2006-01-02 15:04"),
+		ResolutionSLA:      "1-2 days",
+		ExpectedResolution: &exp3,
+		CreatedAt:          time.Now().Add(-5 * time.Minute),
+		UpdatedAt:          time.Now().Add(-5 * time.Minute),
 	})
 }

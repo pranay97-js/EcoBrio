@@ -64,17 +64,29 @@ func (s *Service) ReportIncident(ctx context.Context, req CreateIncidentRequest)
 		return nil, fmt.Errorf("%w: invalid severity level '%s'", api.ErrInvalidInput, req.Severity)
 	}
 
+	timeObs := req.TimeObserved
+	if timeObs == "" {
+		timeObs = time.Now().Format("2006-01-02 15:04")
+	}
+	expectedRes := time.Now().Add(48 * time.Hour)
+
 	inc := &Incident{
-		ID:          uuid.New(),
-		ReporterID:  req.ReporterID,
-		StreamType:  stream,
-		Description: desc,
-		Latitude:    req.Latitude,
-		Longitude:   req.Longitude,
-		Severity:    severity,
-		Status:      StatusRaised,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:                 uuid.New(),
+		ReporterID:         req.ReporterID,
+		StreamType:         stream,
+		Description:        desc,
+		Latitude:           req.Latitude,
+		Longitude:          req.Longitude,
+		Severity:           severity,
+		Status:             StatusRaised,
+		Place:              req.Place,
+		Landmark:           req.Landmark,
+		TimeObserved:       timeObs,
+		PhotoURL:           req.PhotoURL,
+		ResolutionSLA:      "1-2 days",
+		ExpectedResolution: &expectedRes,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 
 	if err := s.repo.Create(ctx, inc); err != nil {

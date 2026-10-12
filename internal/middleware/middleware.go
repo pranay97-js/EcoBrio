@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,6 +27,21 @@ type statusRecorder struct {
 func (rec *statusRecorder) WriteHeader(code int) {
 	rec.statusCode = code
 	rec.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack delegates connection hijacking to underlying ResponseWriter to support WebSockets
+func (rec *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hj, ok := rec.ResponseWriter.(http.Hijacker); ok {
+		return hj.Hijack()
+	}
+	return nil, nil, fmt.Errorf("underlying ResponseWriter does not implement http.Hijacker")
+}
+
+// Flush delegates flushing to underlying ResponseWriter to support SSE/streaming
+func (rec *statusRecorder) Flush() {
+	if fl, ok := rec.ResponseWriter.(http.Flusher); ok {
+		fl.Flush()
+	}
 }
 
 // LoggingAndMetrics wraps HTTP handlers with structured logging, Request-ID injection, and Prometheus tracking
