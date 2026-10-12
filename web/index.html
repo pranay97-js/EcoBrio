@@ -1,10 +1,7 @@
 <!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><title>EcoBrio — Autonomous Circular Intelligence for Every Waste Stream</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUC_L_nEMWiGe5Hiv9xdbzYJ3XuYgZtIY&libraries=places"></script><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } html { scroll-behavior: smooth; } ::-webkit-scrollbar { display: none; }
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUC_L_nEMWiGe5Hiv9xdbzYJ3XuYgZtIY&libraries=places"></script><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } html { scroll-behavior: smooth; } ::-webkit-scrollbar { display: none; }
 @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(1000%); } }
 .scanline-effect { animation: scanline 8s linear infinite; }
-.leaflet-container { font-family: Inter, sans-serif !important; z-index: 10 !important; }
-.leaflet-popup-content-wrapper { background: #15221f !important; color: #d7e6e0 !important; border: 1px solid rgba(66,229,177,0.3) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
-.leaflet-popup-tip { background: #15221f !important; }
 </style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-bright": "#2e3c38", "on-primary-fixed-variant": "#00513b", "outline-variant": "#3c4a43", "primary-fixed": "#60fcc7", "on-tertiary-container": "#1a4b3f", "surface-container": "#15221f", "on-error-container": "#ffdad6", "tertiary-fixed": "#bbeddd", "surface-container-high": "#1f2d29", "inverse-primary": "#006c50", "error": "#ffb4ab", "on-surface": "#d7e6e0", "secondary": "#aad549", "on-tertiary": "#00382d", "on-tertiary-fixed-variant": "#1e4f43", "primary-fixed-dim": "#3adfac", "secondary-fixed": "#c5f262", "background": "#091613", "surface-variant": "#2a3734", "on-error": "#690005", "on-surface-variant": "#bacac1", "on-primary-container": "#004d38", "secondary-fixed-dim": "#aad549", "on-background": "#d7e6e0", "on-secondary-fixed-variant": "#384e00", "primary-container": "#00c897", "on-tertiary-fixed": "#002019", "surface-dim": "#091613", "primary": "#42e5b1", "on-secondary-fixed": "#141f00", "surface-tint": "#3adfac", "surface-container-lowest": "#04100e", "secondary-container": "#769d0d", "on-primary-fixed": "#002116", "surface-container-highest": "#2a3734", "tertiary-container": "#89baab", "on-primary": "#003828", "surface-container-low": "#111e1b", "inverse-surface": "#d7e6e0", "tertiary": "#a4d6c6", "error-container": "#93000a", "on-secondary": "#263500", "surface": "#091613", "inverse-on-surface": "#26332f", "tertiary-fixed-dim": "#9fd1c1", "outline": "#85948c", "on-secondary-container": "#202e00" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "space-xl": "2.5rem", "gutter-lg": "2rem", "margin-mobile": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "margin": "2rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "0.75rem" }, "fontFamily": { "label-lg": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-display-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-display": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"] }, "fontSize": { "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-display-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-display": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "400" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "700" }] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
 <header class="fixed top-0 left-0 right-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container-highest/50 shadow-[0_1px_16px_rgba(0,0,0,0.5)]">
   <div class="h-20 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-gutter">
@@ -839,28 +836,23 @@ window.addEventListener('resize', () => {
 </div>
 <!-- Geospatial Grid: Map Vector + Detail Inspector -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-<!-- Interactive Leaflet Map Visualizer & Hub Selector -->
+<!-- Interactive Google Maps Visualizer & Hub Selector -->
 <div class="lg:col-span-7 rounded-2xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-xl relative min-h-[560px] flex flex-col justify-between p-6">
-  <!-- Top Map Meta Strip with Provider Switcher -->
+  <!-- Top Map Meta Strip -->
   <div class="relative z-10 flex flex-wrap items-center justify-between pb-3 border-b border-surface-container-highest/60 gap-2">
     <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container/90 border border-primary/30 backdrop-blur-md shadow-sm text-label-sm font-mono text-primary">
       <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
       <span>MULTI-STREAM RADAR LIVE</span>
     </div>
     <div class="flex items-center gap-2">
-      <div class="flex items-center gap-1 bg-surface-container border border-outline-variant/40 rounded-lg p-0.5 text-xs font-mono">
-        <button id="hub-map-toggle-google" onclick="switchHubMapProvider('google')" class="px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm">Google Maps 🌐</button>
-        <button id="hub-map-toggle-leaflet" onclick="switchHubMapProvider('leaflet')" class="px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary">Carto Dark 🗺️</button>
-      </div>
       <div class="flex items-center gap-1.5 bg-surface-container/90 border border-outline-variant/30 backdrop-blur-md px-2.5 py-1 rounded-lg text-label-sm font-mono text-outline">
-        <span class="text-primary font-semibold">4 Active Hubs</span>
+        <span class="text-primary font-semibold">Google Maps 🌐 · 4 Active Hubs</span>
       </div>
     </div>
   </div>
 
-  <!-- Real-Time Interactive Dual Map for Smart Hubs -->
+  <!-- Real-Time Interactive Google Map for Smart Hubs -->
   <div class="relative w-full my-3 z-0 h-[360px]">
-    <div id="hub-leaflet-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-0 hidden"></div>
     <div id="hub-google-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-10"></div>
   </div>
 
@@ -1962,21 +1954,17 @@ window.addEventListener('resize', () => {
     </div>
   </div>
 
-  <!-- Real-Time Interactive Map with Dual Google Maps & Leaflet Switcher -->
+  <!-- Real-Time Interactive Google Map for Incidents -->
   <div class="flex flex-col gap-2">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Live Geospatial Coordinate Map</span>
-        <div class="flex items-center gap-1 bg-surface-container border border-outline-variant/40 rounded-lg p-0.5 text-xs font-mono">
-          <button id="inc-map-toggle-google" onclick="switchIncidentMapProvider('google')" class="px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm">Google Maps 🌐</button>
-          <button id="inc-map-toggle-leaflet" onclick="switchIncidentMapProvider('leaflet')" class="px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary">Carto Dark 🗺️</button>
-        </div>
+        <span class="px-2 py-0.5 rounded-md bg-surface-container border border-outline-variant/40 text-[11px] font-mono text-primary font-semibold">Google Maps 🌐</span>
       </div>
       <span class="font-mono text-label-sm text-outline">Click anywhere on map to capture coordinates &amp; report</span>
     </div>
     <div class="relative w-full h-80 rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner z-10">
-      <div id="incident-leaflet-map" class="w-full h-full relative z-10 hidden"></div>
-      <div id="incident-google-map" class="w-full h-full relative z-20"></div>
+      <div id="incident-google-map" class="w-full h-full relative z-10"></div>
     </div>
   </div>
 
@@ -2865,7 +2853,7 @@ window.addEventListener('resize', () => {
     }
 
     // =========================================================================
-    // UNIVERSAL HUB DATABASE & LEAFLET HUBS MAP ENGINE
+    // UNIVERSAL HUB DATABASE & GOOGLE MAPS ENGINE
     // =========================================================================
     const universalHubDatabase = {
       central: {
@@ -2952,8 +2940,6 @@ window.addEventListener('resize', () => {
       }
     };
 
-    let hubMap = null;
-    let hubMarkers = {};
     let hubGoogleMap = null;
     let hubGoogleMarkers = {};
     let incidentGoogleMap = null;
@@ -2976,9 +2962,7 @@ window.addEventListener('resize', () => {
     ];
 
     window.gm_authFailure = function() {
-      console.warn('Google Maps authentication fallback: switching to Leaflet Carto.');
-      if (typeof switchHubMapProvider === 'function') switchHubMapProvider('leaflet');
-      if (typeof switchIncidentMapProvider === 'function') switchIncidentMapProvider('leaflet');
+      console.warn('Google Maps authentication status: check Google Cloud console restrictions.');
     };
 
     function initGoogleMaps() {
@@ -3162,132 +3146,11 @@ window.addEventListener('resize', () => {
     }
 
     function switchHubMapProvider(provider) {
-      const gMapEl = document.getElementById('hub-google-map');
-      const lMapEl = document.getElementById('hub-leaflet-map');
-      const btnG = document.getElementById('hub-map-toggle-google');
-      const btnL = document.getElementById('hub-map-toggle-leaflet');
-
-      if (provider === 'google') {
-        if (!window.google || !window.google.maps) {
-          console.warn('Google Maps JavaScript SDK is initializing or blocked by network. Staying on Leaflet Carto.');
-          return;
-        }
-        if (gMapEl && lMapEl) {
-          lMapEl.classList.add('hidden');
-          gMapEl.classList.remove('hidden');
-          if (btnG && btnL) {
-            btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
-            btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
-          }
-          if (!hubGoogleMap) {
-            initGoogleMaps();
-          } else {
-            google.maps.event.trigger(hubGoogleMap, 'resize');
-            hubGoogleMap.setCenter({ lat: 28.6250, lng: 77.2150 });
-          }
-        }
-      } else {
-        if (gMapEl && lMapEl) {
-          gMapEl.classList.add('hidden');
-          lMapEl.classList.remove('hidden');
-          if (btnG && btnL) {
-            btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
-            btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
-          }
-          if (hubMap) {
-            hubMap.invalidateSize();
-            hubMap.setView([28.6250, 77.2150], 12);
-          }
-        }
-      }
+      // Google Maps is the exclusive map provider
     }
 
     function switchIncidentMapProvider(provider) {
-      const gMapEl = document.getElementById('incident-google-map');
-      const lMapEl = document.getElementById('incident-leaflet-map');
-      const btnG = document.getElementById('inc-map-toggle-google');
-      const btnL = document.getElementById('inc-map-toggle-leaflet');
-
-      if (provider === 'google') {
-        if (!window.google || !window.google.maps) {
-          console.warn('Google Maps JavaScript SDK is initializing or blocked by network. Staying on Leaflet Carto.');
-          return;
-        }
-        if (gMapEl && lMapEl) {
-          lMapEl.classList.add('hidden');
-          gMapEl.classList.remove('hidden');
-          if (btnG && btnL) {
-            btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
-            btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
-          }
-          if (!incidentGoogleMap) {
-            initGoogleMaps();
-          } else {
-            google.maps.event.trigger(incidentGoogleMap, 'resize');
-            incidentGoogleMap.setCenter({ lat: 28.6139, lng: 77.2090 });
-            syncGoogleMapIncidentMarkers();
-          }
-        }
-      } else {
-        if (gMapEl && lMapEl) {
-          gMapEl.classList.add('hidden');
-          lMapEl.classList.remove('hidden');
-          if (btnG && btnL) {
-            btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
-            btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
-          }
-          if (incidentMap) {
-            incidentMap.invalidateSize();
-            syncMapMarkers();
-          }
-        }
-      }
-    }
-
-    function initHubMap() {
-      const mapContainer = document.getElementById('hub-leaflet-map');
-      if (!mapContainer || hubMap) return;
-
-      try {
-        hubMap = L.map('hub-leaflet-map', {
-          zoomControl: true,
-          attributionControl: false
-        }).setView([28.6250, 77.2150], 12);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19,
-          subdomains: 'abcd'
-        }).addTo(hubMap);
-
-        // Plot 4 Universal Hub Beacons
-        for (const [key, hub] of Object.entries(universalHubDatabase)) {
-          const marker = L.circleMarker([hub.lat, hub.lon], {
-            radius: 9,
-            color: hub.color,
-            fillColor: hub.color,
-            fillOpacity: 0.85,
-            weight: 3
-          }).addTo(hubMap);
-
-          const popupHtml = `
-            <div style="font-family: Inter, sans-serif; color: #d7e6e0; padding: 2px;">
-              <strong style="color: ${hub.color}; font-size: 13px;">${hub.name}</strong><br/>
-              <span style="font-size: 11px; color: #a0aec0;">${hub.address}</span><br/>
-              <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                <span style="color: #42e5b1; font-weight: bold;">${hub.capacityVal}</span>
-                <button onclick="selectHub('${key}'); openReservationModal();" style="background: #00c897; color: #002116; border: none; padding: 3px 8px; border-radius: 6px; font-weight: bold; cursor: pointer;">Book</button>
-              </div>
-            </div>
-          `;
-          marker.bindPopup(popupHtml);
-          marker.on('click', () => selectHub(key));
-          hubMarkers[key] = marker;
-        }
-
-        setTimeout(() => hubMap.invalidateSize(), 300);
-      } catch (err) {
-        console.warn('Hub map initialization notice:', err);
-      }
+      // Google Maps is the exclusive map provider
     }
 
     function selectHub(hubKey) {
@@ -3343,13 +3206,6 @@ window.addEventListener('resize', () => {
         });
       }
 
-      // Smoothly fly Leaflet map to selected hub
-      if (hubMap && data.lat && data.lon) {
-        hubMap.flyTo([data.lat, data.lon], 14, { duration: 1.0 });
-        if (hubMarkers[hubKey]) {
-          setTimeout(() => hubMarkers[hubKey].openPopup(), 600);
-        }
-      }
 
       // Smoothly pan Google Map to selected hub
       if (hubGoogleMap && data.lat && data.lon) {
@@ -4275,10 +4131,8 @@ window.addEventListener('resize', () => {
     }
 
     // =========================================================================
-    // REAL-TIME WEBSOCKET HUB & LEAFLET GEOSPATIAL MAP ENGINE
+    // REAL-TIME WEBSOCKET HUB & TELEMETRY ENGINE
     // =========================================================================
-    let incidentMap = null;
-    let incidentMarkers = {};
     let activeIncidents = new Map();
     let wsConnection = null;
     let wsLastSeq = 0;
@@ -4286,37 +4140,7 @@ window.addEventListener('resize', () => {
     let wsReconnectAttempts = 0;
 
     function initIncidentMap() {
-      const mapContainer = document.getElementById('incident-leaflet-map');
-      if (!mapContainer || incidentMap) return;
-
-      try {
-        incidentMap = L.map('incident-leaflet-map', {
-          zoomControl: true,
-          attributionControl: false
-        }).setView([28.6139, 77.2090], 12);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19,
-          subdomains: 'abcd'
-        }).addTo(incidentMap);
-
-        // Click-to-Report Feature: Clicking anywhere on the map populates coordinates
-        incidentMap.on('click', function(e) {
-          const latInput = document.getElementById('inc-lat');
-          const lonInput = document.getElementById('inc-lon');
-          if (latInput) latInput.value = e.latlng.lat.toFixed(4);
-          if (lonInput) lonInput.value = e.latlng.lng.toFixed(4);
-
-          const modal = document.getElementById('report-incident-modal');
-          if (modal && modal.classList.contains('hidden')) {
-            modal.classList.remove('hidden');
-          }
-        });
-
-        setTimeout(() => incidentMap.invalidateSize(), 300);
-      } catch (e) {
-        console.warn('Map initialization notice:', e);
-      }
+      // Google Maps is the exclusive map provider
     }
 
     function toggleReportIncidentModal() {
@@ -4916,45 +4740,6 @@ window.addEventListener('resize', () => {
     }
 
     function syncMapMarkers() {
-      if (!incidentMap) return;
-
-      // Remove markers that are no longer active
-      for (const [id, marker] of Object.entries(incidentMarkers)) {
-        if (!activeIncidents.has(id)) {
-          incidentMap.removeLayer(marker);
-          delete incidentMarkers[id];
-        }
-      }
-
-      // Add or update markers for active incidents
-      const bounds = [];
-      for (const inc of activeIncidents.values()) {
-        const color = inc.status === 'RAISED' ? '#ef4444' : inc.status === 'IN_PROGRESS' ? '#f59e0b' : '#10b981';
-        bounds.push([inc.latitude, inc.longitude]);
-
-        const popupContent = getIncidentPopupHtml(inc, color);
-
-        if (incidentMarkers[inc.id]) {
-          incidentMarkers[inc.id].setStyle({ color: color, fillColor: color });
-          incidentMarkers[inc.id].setPopupContent(popupContent);
-        } else {
-          const marker = L.circleMarker([inc.latitude, inc.longitude], {
-            radius: 8,
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.8,
-            weight: 2
-          }).addTo(incidentMap);
-
-          marker.bindPopup(popupContent);
-          incidentMarkers[inc.id] = marker;
-        }
-      }
-
-      if (bounds.length > 0 && !incidentMap.hasBoundsSet) {
-        incidentMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-        incidentMap.hasBoundsSet = true;
-      }
       syncGoogleMapIncidentMarkers();
     }
 
@@ -5046,10 +4831,6 @@ window.addEventListener('resize', () => {
     // DOM READY INITIALIZATION
     // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Initialize Leaflet as fallback
-      initHubMap();
-      initIncidentMap();
-
       // Reliable Google Maps initialization with active polling loop
       function tryInitGoogleMaps(attempt = 0) {
         if (window.google && window.google.maps) {
@@ -5064,12 +4845,10 @@ window.addEventListener('resize', () => {
               incidentGoogleMap.setCenter({ lat: 28.6139, lng: 77.2090 });
             }
           }, 300);
-        } else if (attempt < 30) {
+        } else if (attempt < 40) {
           setTimeout(() => tryInitGoogleMaps(attempt + 1), 200);
         } else {
-          console.warn('Google Maps SDK unavailable after 6s. Defaulting to Leaflet Carto.');
-          switchHubMapProvider('leaflet');
-          switchIncidentMapProvider('leaflet');
+          console.warn('Google Maps SDK initialization notice: Check API key status or network access.');
         }
       }
       tryInitGoogleMaps();
@@ -5077,12 +4856,6 @@ window.addEventListener('resize', () => {
       selectHub('central');
       connectWebSocket();
       loadScheduledPickups();
-
-      // Recalculate Leaflet tile dimensions once DOM stabilizes
-      setTimeout(() => {
-        if (hubMap) hubMap.invalidateSize();
-        if (incidentMap) incidentMap.invalidateSize();
-      }, 500);
 
       const chatInput = document.getElementById('ai-chat-input');
       if (chatInput) {
@@ -5092,4 +4865,4 @@ window.addEventListener('resize', () => {
       }
     });
   </script>
-</div></main><footer class="w-full bg-surface-container-lowest text-on-surface-variant border-t border-surface-container-highest/40 shadow-[0_-1px_16px_rgba(0,0,0,0.5)]"><div class="max-w-7xl mx-auto px-6 lg:px-12 py-space-xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg pb-space-lg"><div class="lg:col-span-2 flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(66,229,177,0.2)]"><span class="material-symbols-outlined text-[22px]">recycling</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">EcoBrio</span><span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Universal Circular Operating System</span></div></div><p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Autonomous circular intelligence for every municipal and commercial waste stream. Unifying organics, polymers, metals, glass, paper, and tech minerals into real-time closed loops.</p><div class="flex items-center gap-space-xs text-primary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px]">all_inclusive</span><span>Continuous Multi-Stream Circulation Verified</span></div></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Universal Streams</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-emerald-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Organic &amp; Compost</a><a class="hover:text-cyan-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Polymers &amp; Plastics</a><a class="hover:text-lime-300 transition-colors" data-path="universal-streams" href="#streams-matrix">Metals &amp; Heavy Alloys</a><a class="hover:text-sky-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Glass &amp; High Silica</a><a class="hover:text-amber-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Paper &amp; Recovered Pulp</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Municipal Tools</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" data-path="collection-hubs" href="#hub-explorer">Multi-Bin Smart Hubs</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Sub-Second Incident Feed</a><a class="hover:text-primary transition-colors" data-path="green-rewards" href="#rewards-section">EcoToken Public Ledger</a><a class="hover:text-primary transition-colors" data-path="how-it-works" href="#how-it-works">Contactless Slot Access</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Autonomous Fleet Dispatch</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Developer &amp; API</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" href="/metrics">Prometheus Metrics (/metrics)</a><a class="hover:text-primary transition-colors" href="/healthz">Health Check (/healthz)</a><a class="hover:text-primary transition-colors" href="https://github.com/pranay97-js/EcoBrio" target="_blank" rel="noopener">GitHub Repository</a><a class="hover:text-primary transition-colors" href="#streams-matrix">Circular Stream Matrix</a><a class="hover:text-primary transition-colors" href="#scrap-marketplace">Scrap Rates &amp; Trade</a></nav></div></div><div class="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md bg-surface-container/30 border border-outline-variant/20 px-6 py-4 rounded-xl"><div class="flex items-center gap-space-sm"><span class="font-body-sm text-body-sm text-on-surface-variant">© 2025 EcoBrio — Open-Source Reverse-Logistics &amp; Circular Intelligence Platform. MIT Licensed.</span></div><div class="flex items-center gap-space-sm text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">eco</span><span class="italic text-on-surface font-medium">“Every material in motion. Zero waste left behind.”</span></div></div></div></footer></body></html>
+</div></main><footer class="w-full bg-surface-container-lowest text-on-surface-variant border-t border-surface-container-highest/40 shadow-[0_-1px_16px_rgba(0,0,0,0.5)]"><div class="max-w-7xl mx-auto px-6 lg:px-12 py-space-xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg pb-space-lg"><div class="lg:col-span-2 flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(66,229,177,0.2)]"><span class="material-symbols-outlined text-[22px]">recycling</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">EcoBrio</span><span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Universal Circular Operating System</span></div></div><p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Autonomous circular intelligence for every municipal and commercial waste stream. Unifying organics, polymers, metals, glass, paper, and tech minerals into real-time closed loops.</p><div class="flex items-center gap-space-xs text-primary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px]">all_inclusive</span><span>Continuous Multi-Stream Circulation Verified</span></div></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Universal Streams</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-emerald-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Organic &amp; Compost</a><a class="hover:text-cyan-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Polymers &amp; Plastics</a><a class="hover:text-lime-300 transition-colors" data-path="universal-streams" href="#streams-matrix">Metals &amp; Heavy Alloys</a><a class="hover:text-sky-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Glass &amp; High Silica</a><a class="hover:text-amber-400 transition-colors" data-path="universal-streams" href="#streams-matrix">Paper &amp; Recovered Pulp</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Municipal Tools</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" data-path="collection-hubs" href="#hub-explorer">Multi-Bin Smart Hubs</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Sub-Second Incident Feed</a><a class="hover:text-primary transition-colors" data-path="green-rewards" href="#rewards-section">EcoToken Public Ledger</a><a class="hover:text-primary transition-colors" data-path="how-it-works" href="#how-it-works">Contactless Slot Access</a><a class="hover:text-primary transition-colors" data-path="live-intelligence" href="#telemetry-section">Autonomous Fleet Dispatch</a></nav></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Developer &amp; API</h4><nav class="flex flex-col gap-space-xs font-body-sm text-body-sm"><a class="hover:text-primary transition-colors" href="/metrics">Prometheus Metrics (/metrics)</a><a class="hover:text-primary transition-colors" href="/health">Health &amp; Readiness (/health, /ready)</a><a class="hover:text-primary transition-colors" href="https://github.com/pranay97-js/EcoBrio" target="_blank" rel="noopener">GitHub Repository</a><a class="hover:text-primary transition-colors" href="#streams-matrix">Circular Stream Matrix</a><a class="hover:text-primary transition-colors" href="#scrap-marketplace">Scrap Rates &amp; Trade</a></nav></div></div><div class="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md bg-surface-container/30 border border-outline-variant/20 px-6 py-4 rounded-xl"><div class="flex items-center gap-space-sm"><span class="font-body-sm text-body-sm text-on-surface-variant">© 2025 EcoBrio — Open-Source Reverse-Logistics &amp; Circular Intelligence Platform. MIT Licensed.</span></div><div class="flex items-center gap-space-sm text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">eco</span><span class="italic text-on-surface font-medium">“Every material in motion. Zero waste left behind.”</span></div></div></div></footer></body></html>

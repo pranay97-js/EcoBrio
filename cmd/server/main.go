@@ -104,14 +104,16 @@ func main() {
 	// Configure HTTP Router
 	mux := http.NewServeMux()
 
-	// Health & Readiness Endpoints
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	// Health & Readiness Endpoints (with /health and /ready aliases)
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"UP","service":"ecobrio"}`))
-	})
+	}
+	mux.HandleFunc("GET /healthz", healthHandler)
+	mux.HandleFunc("GET /health", healthHandler)
 
-	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
+	readyHandler := func(w http.ResponseWriter, r *http.Request) {
 		readiness := ReadinessResponse{
 			Status:     "UP",
 			Timestamp:  time.Now(),
@@ -138,7 +140,9 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		_ = json.NewEncoder(w).Encode(readiness)
-	})
+	}
+	mux.HandleFunc("GET /readyz", readyHandler)
+	mux.HandleFunc("GET /ready", readyHandler)
 
 	// Prometheus Metrics Endpoint
 	mux.Handle("GET /metrics", promhttp.Handler())
@@ -321,7 +325,24 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
-	// Start HTTP Server in background goroutine
+	// Start auxiliary HTTP server on port 3000 for dual-port accessibility
+	var auxServer *http.Server
+	if cfg.Server.Port != "3000" {
+		auxServer = &http.Server{
+			Addr:         ":3000",
+			Handler:      handler,
+			ReadTimeout:  cfg.Server.ReadTimeout,
+			WriteTimeout: cfg.Server.WriteTimeout,
+		}
+		go func() {
+			slog.Info("Starting auxiliary ECOBrio HTTP server for port 3000 access", "address", auxServer.Addr)
+			if err := auxServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				slog.Warn("Auxiliary port 3000 server stopped or port already bound", "error", err)
+			}
+		}()
+	}
+
+	// Start primary HTTP Server in background goroutine
 	serverErr := make(chan error, 1)
 	go func() {
 		slog.Info("Starting ECOBrio HTTP server", "address", server.Addr)
@@ -339,6 +360,9 @@ func main() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
+		if auxServer != nil {
+			_ = auxServer.Shutdown(shutdownCtx)
+		}
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			slog.Error("Server forced shutdown", "error", err)
 		}
