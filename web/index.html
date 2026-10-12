@@ -860,8 +860,8 @@ window.addEventListener('resize', () => {
 
   <!-- Real-Time Interactive Dual Map for Smart Hubs -->
   <div class="relative w-full my-3 z-0 h-[360px]">
-    <div id="hub-leaflet-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-0"></div>
-    <div id="hub-google-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner absolute inset-0 z-10 hidden"></div>
+    <div id="hub-leaflet-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-0 hidden"></div>
+    <div id="hub-google-map" class="w-full h-full rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner relative z-10"></div>
   </div>
 
   <!-- Interactive Map Nodes with Distinct Stream Color Beacons -->
@@ -1975,8 +1975,8 @@ window.addEventListener('resize', () => {
       <span class="font-mono text-label-sm text-outline">Click anywhere on map to capture coordinates &amp; report</span>
     </div>
     <div class="relative w-full h-80 rounded-xl bg-surface-container-lowest border border-outline-variant/40 overflow-hidden shadow-inner z-10">
-      <div id="incident-leaflet-map" class="w-full h-full relative z-10"></div>
-      <div id="incident-google-map" class="w-full h-full absolute inset-0 z-20 hidden"></div>
+      <div id="incident-leaflet-map" class="w-full h-full relative z-10 hidden"></div>
+      <div id="incident-google-map" class="w-full h-full relative z-20"></div>
     </div>
   </div>
 
@@ -3072,6 +3072,7 @@ window.addEventListener('resize', () => {
         }
       }
     }
+    window.initGoogleMaps = initGoogleMaps;
 
     function getIncidentPopupHtml(inc, color) {
       const esc = (t) => {
@@ -3174,10 +3175,15 @@ window.addEventListener('resize', () => {
         if (gMapEl && lMapEl) {
           lMapEl.classList.add('hidden');
           gMapEl.classList.remove('hidden');
-          if (!hubGoogleMap) initGoogleMaps();
           if (btnG && btnL) {
             btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
             btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
+          }
+          if (!hubGoogleMap) {
+            initGoogleMaps();
+          } else {
+            google.maps.event.trigger(hubGoogleMap, 'resize');
+            hubGoogleMap.setCenter({ lat: 28.6250, lng: 77.2150 });
           }
         }
       } else {
@@ -3188,7 +3194,10 @@ window.addEventListener('resize', () => {
             btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
             btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
           }
-          if (hubMap) hubMap.invalidateSize();
+          if (hubMap) {
+            hubMap.invalidateSize();
+            hubMap.setView([28.6250, 77.2150], 12);
+          }
         }
       }
     }
@@ -3207,10 +3216,16 @@ window.addEventListener('resize', () => {
         if (gMapEl && lMapEl) {
           lMapEl.classList.add('hidden');
           gMapEl.classList.remove('hidden');
-          if (!incidentGoogleMap) initGoogleMaps();
           if (btnG && btnL) {
             btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
             btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
+          }
+          if (!incidentGoogleMap) {
+            initGoogleMaps();
+          } else {
+            google.maps.event.trigger(incidentGoogleMap, 'resize');
+            incidentGoogleMap.setCenter({ lat: 28.6139, lng: 77.2090 });
+            syncGoogleMapIncidentMarkers();
           }
         }
       } else {
@@ -3221,7 +3236,10 @@ window.addEventListener('resize', () => {
             btnL.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all bg-primary text-on-primary font-bold shadow-sm";
             btnG.className = "px-2 py-1 rounded-md text-[11px] font-semibold transition-all text-on-surface hover:text-primary";
           }
-          if (incidentMap) incidentMap.invalidateSize();
+          if (incidentMap) {
+            incidentMap.invalidateSize();
+            syncMapMarkers();
+          }
         }
       }
     }
@@ -5028,15 +5046,34 @@ window.addEventListener('resize', () => {
     // DOM READY INITIALIZATION
     // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
+      // Initialize Leaflet as fallback
       initHubMap();
       initIncidentMap();
-      if (window.google && window.google.maps) {
-        initGoogleMaps();
-      } else {
-        setTimeout(() => {
-          if (window.google && window.google.maps) initGoogleMaps();
-        }, 1200);
+
+      // Reliable Google Maps initialization with active polling loop
+      function tryInitGoogleMaps(attempt = 0) {
+        if (window.google && window.google.maps) {
+          initGoogleMaps();
+          setTimeout(() => {
+            if (hubGoogleMap) {
+              google.maps.event.trigger(hubGoogleMap, 'resize');
+              hubGoogleMap.setCenter({ lat: 28.6250, lng: 77.2150 });
+            }
+            if (incidentGoogleMap) {
+              google.maps.event.trigger(incidentGoogleMap, 'resize');
+              incidentGoogleMap.setCenter({ lat: 28.6139, lng: 77.2090 });
+            }
+          }, 300);
+        } else if (attempt < 30) {
+          setTimeout(() => tryInitGoogleMaps(attempt + 1), 200);
+        } else {
+          console.warn('Google Maps SDK unavailable after 6s. Defaulting to Leaflet Carto.');
+          switchHubMapProvider('leaflet');
+          switchIncidentMapProvider('leaflet');
+        }
       }
+      tryInitGoogleMaps();
+
       selectHub('central');
       connectWebSocket();
       loadScheduledPickups();
